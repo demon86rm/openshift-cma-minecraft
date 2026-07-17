@@ -29,6 +29,7 @@ Source walkthrough for the waker — both protocols, the proxy paths, the probe 
 
 ```
 build/mc-waker/                    Go source for the waker + Containerfile + Makefile
+mc-data/mc-ragnarok-data.tar.gz    prebuilt world, seeded into the PVC on first install
 manifests/
 ├── keda/                          KedaController + the two ScaledObject variants
 ├── minecraft/                     Deployment (java + bedrock containers), PVC, Services, Secrets
@@ -80,9 +81,19 @@ NAMESPACE=acme TRIGGER=prometheus ./scripts/bootstrap.sh
 # Already pushed the waker image somewhere (and updated `image:` in
 # manifests/waker/mc-waker.yaml)? Skip the in-cluster build:
 ./scripts/bootstrap.sh --skip-build
+
+# Don't seed the prebuilt world (start from a freshly generated one):
+./scripts/bootstrap.sh --skip-seed
+
+# Re-seed, overwriting whatever world is already in the PVC:
+./scripts/bootstrap.sh --force-seed
 ```
 
-The script applies the `KedaController`, creates the namespace, runs `make ocp-build` to push the waker image into the namespace's ImageStream, applies the Minecraft + waker workloads, and applies the chosen `ScaledObject`. Run `./scripts/bootstrap.sh --help` to see every flag.
+The script applies the `KedaController`, creates the namespace, runs `make ocp-build` to push the waker image into the namespace's ImageStream, seeds the prebuilt world into the PVC, applies the Minecraft + waker workloads, and applies the chosen `ScaledObject`. Run `./scripts/bootstrap.sh --help` to see every flag.
+
+### World seeding
+
+`mc-data/mc-ragnarok-data.tar.gz` is a prebuilt Java world (the `ragnarok` level). On the first install the script extracts it into the `mc-ragnarok-datadir` PVC at `/data/ragnarok` **before** the server boots, so `mc-ragnarok` comes up on the workshop world instead of generating a fresh one. Because the PVC is `ReadWriteOnce`, seeding runs via a short-lived helper pod while the Deployment is scaled to zero — it never fights the running server for the volume. The step is idempotent: if a world is already present it is left untouched (skipped), unless you pass `--force-seed`. Use `--skip-seed` to start from a freshly generated world instead. The Bedrock world is not seeded — it generates on first boot. Override the source archive or level name with the `WORLD_TARBALL` and `WORLD_LEVEL` env vars.
 
 `mc-ragnarok` will scale to `0` within ~60s of being idle (configurable via the ScaledObject's `cooldownPeriod`).
 
@@ -127,6 +138,4 @@ The cluster-scoped `KedaController` (in `openshift-keda`) is left alone in eithe
 
 - OpenShift docs — [Custom Metrics Autoscaler Operator](https://docs.openshift.com/container-platform/latest/nodes/cma/nodes-cma-autoscaling-custom.html)
 - KEDA docs — [`ScaledObject` concepts](https://keda.sh/docs/latest/concepts/scaling-deployments/), [`metrics-api` trigger](https://keda.sh/docs/latest/scalers/metrics-api/), [`prometheus` trigger](https://keda.sh/docs/latest/scalers/prometheus/)
-- itzg images — [`minecraft-server`](https://github.com/itzg/docker-minecraft-server), [`minecraft-bedrock-server`](https://github.com/itzg/docker-minecraft-bedrock-server), [`mc-monitor`](https://github.com/itzg/mc-monitor)
-=======
 - itzg images — [`minecraft-server`](https://github.com/itzg/docker-minecraft-server), [`minecraft-bedrock-server`](https://github.com/itzg/docker-minecraft-bedrock-server), [`mc-monitor`](https://github.com/itzg/mc-monitor)
