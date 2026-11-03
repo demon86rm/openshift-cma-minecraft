@@ -34,3 +34,6 @@ docs/cma-deck.pptx
 
 # World data (published as GitHub Release asset world-v1)
 mc-data/*.tar.gz
+
+# Archify working folders (candidates, receipts)
+.archify/
