@@ -42,6 +42,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd)"
 MANIFESTS="$REPO_ROOT/manifests"
 : "${WORLD_TARBALL:=$REPO_ROOT/mc-data/mc-ragnarok-data.tar.gz}"
+# Tarball is not committed: fetched once from the GitHub Release when missing.
+: "${WORLD_URL:=https://github.com/CSA-RH/openshift-cma-minecraft/releases/download/world-v1/mc-ragnarok-data.tar.gz}"
+: "${WORLD_SHA256:=0d49a056aab00b774608618b42eca2c2887885ad3e747f9189af001ffb64ad6d}"
 
 DRY_RUN=0
 UNINSTALL=0
@@ -116,6 +119,27 @@ world_already_seeded_via_running_pod() {
      test -f "/data/$WORLD_LEVEL/level.dat" >/dev/null 2>&1
 }
 
+# fetch_world_tarball: download $WORLD_URL to $WORLD_TARBALL and check it
+# against $WORLD_SHA256. Leaves no partial file behind on failure.
+fetch_world_tarball() {
+  note "Downloading world tarball from $WORLD_URL"
+  local tmp="$WORLD_TARBALL.part" sum
+  mkdir -p "$(dirname "$WORLD_TARBALL")"
+  if ! curl -fsSL -o "$tmp" "$WORLD_URL"; then
+    rm -f "$tmp"; return 1
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    sum="$(sha256sum "$tmp" | cut -d' ' -f1)"
+  else
+    sum="$(shasum -a 256 "$tmp" | cut -d' ' -f1)"
+  fi
+  if [[ "$sum" != "$WORLD_SHA256" ]]; then
+    warn "sha256 mismatch for downloaded tarball (got $sum)"
+    rm -f "$tmp"; return 1
+  fi
+  mv "$tmp" "$WORLD_TARBALL"
+}
+
 # seed_world: extract $WORLD_TARBALL into /data/$WORLD_LEVEL on the
 # mc-ragnarok-datadir PVC using a throwaway helper pod. The PVC is
 # ReadWriteOnce and the server generates a fresh world on first boot, so we
@@ -128,8 +152,12 @@ seed_world() {
     return 0
   fi
   if [[ ! -f "$WORLD_TARBALL" ]]; then
-    warn "World tarball not found at $WORLD_TARBALL — skipping seed."
-    return 0
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      echo "(would download $WORLD_URL to $WORLD_TARBALL and verify sha256)"
+    elif ! fetch_world_tarball; then
+      warn "Could not download a valid world tarball from $WORLD_URL — skipping seed."
+      return 0
+    fi
   fi
 
   note "Seeding world '$WORLD_LEVEL' from $(basename "$WORLD_TARBALL")"

@@ -29,7 +29,7 @@ Source walkthrough for the waker — both protocols, the proxy paths, the probe 
 
 ```
 build/mc-waker/                    Go source for the waker + Containerfile + Makefile
-mc-data/mc-ragnarok-data.tar.gz    prebuilt world, seeded into the PVC on first install
+mc-data/                           prebuilt world tarball (downloaded from the world-v1 Release, not committed)
 manifests/
 ├── keda/                          KedaController + the two ScaledObject variants
 ├── minecraft/                     Deployment (java + bedrock containers), PVC, Services, Secrets
@@ -93,7 +93,7 @@ The script applies the `KedaController`, creates the namespace, runs `make ocp-b
 
 ### World seeding
 
-`mc-data/mc-ragnarok-data.tar.gz` is a prebuilt Java world (the `ragnarok` level). On the first install the script extracts it into the `mc-ragnarok-datadir` PVC at `/data/ragnarok` **before** the server boots, so `mc-ragnarok` comes up on the workshop world instead of generating a fresh one. Because the PVC is `ReadWriteOnce`, seeding runs via a short-lived helper pod while the Deployment is scaled to zero — it never fights the running server for the volume. The step is idempotent: if a world is already present it is left untouched (skipped), unless you pass `--force-seed`. Use `--skip-seed` to start from a freshly generated world instead. The Bedrock world is not seeded — it generates on first boot. Override the source archive or level name with the `WORLD_TARBALL` and `WORLD_LEVEL` env vars.
+`mc-data/mc-ragnarok-data.tar.gz` is a prebuilt Java world (the `ragnarok` level). It is not committed: if missing, the script downloads it from the [`world-v1` Release](https://github.com/CSA-RH/openshift-cma-minecraft/releases/tag/world-v1) and verifies its sha256 (override with `WORLD_URL` / `WORLD_SHA256`). On the first install the script extracts it into the `mc-ragnarok-datadir` PVC at `/data/ragnarok` **before** the server boots, so `mc-ragnarok` comes up on the workshop world instead of generating a fresh one. Because the PVC is `ReadWriteOnce`, seeding runs via a short-lived helper pod while the Deployment is scaled to zero — it never fights the running server for the volume. The step is idempotent: if a world is already present it is left untouched (skipped), unless you pass `--force-seed`. Use `--skip-seed` to start from a freshly generated world instead. The Bedrock world is not seeded — it generates on first boot. Override the source archive or level name with the `WORLD_TARBALL` and `WORLD_LEVEL` env vars.
 
 `mc-ragnarok` will scale to `0` within ~60s of being idle (configurable via the ScaledObject's `cooldownPeriod`).
 

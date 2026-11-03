@@ -1,6 +1,5 @@
 # Build artifacts
-/waker/mc-waker
-/waker/Dockerfile   # generated as a symlink to Containerfile by `make ocp-build`
+/build/mc-waker/mc-waker
 
 # Go
 *.test
@@ -13,15 +12,25 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-.claude/
 *~
+
+# Claude Code / agent tooling
+.claude/
+skills-lock.json
+graphify-out/
 
 # Local secrets / overrides
 *.local.yaml
 *.local.env
+.env
+*.kubeconfig
+kubeconfig
 
-# Docs
+# Docs (local drafts / rendered output)
 docs/keda-vs-knative.md
 docs/cma-deck.md
 docs/cma-deck.pdf
 docs/cma-deck.pptx
+
+# World data (published as GitHub Release asset world-v1)
+mc-data/*.tar.gz
