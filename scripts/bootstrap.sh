@@ -43,7 +43,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd)"
 MANIFESTS="$REPO_ROOT/manifests"
 : "${WORLD_TARBALL:=$REPO_ROOT/mc-data/mc-ragnarok-data.tar.gz}"
 # Tarball is not committed: fetched once from the GitHub Release when missing.
-: "${WORLD_URL:=https://github.com/CSA-RH/openshift-cma-minecraft/releases/download/world-v1/mc-ragnarok-data.tar.gz}"
+: "${WORLD_URL:=https://github.com/demon86rm/openshift-cma-minecraft/releases/download/world-v1/mc-ragnarok-data.tar.gz}"
 : "${WORLD_SHA256:=0d49a056aab00b774608618b42eca2c2887885ad3e747f9189af001ffb64ad6d}"
 
 DRY_RUN=0

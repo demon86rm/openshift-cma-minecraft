@@ -3,7 +3,7 @@ runtime:
 
 site:
   title: Scale to Zero with the Custom Metrics Autoscaler
-  url: https://csa-rh.github.io/openshift-cma-minecraft
+  url: https://demon86rm.github.io/openshift-cma-minecraft
   start_page: cma-minecraft::index.adoc
 
 content:

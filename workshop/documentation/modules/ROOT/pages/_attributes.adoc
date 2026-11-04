@@ -6,7 +6,7 @@
 :ocp-version: 4.21+
 :cma-version: 2.19
 :mc-version: 1.21.11
-:repo-url: https://github.com/CSA-RH/openshift-cma-minecraft
-:world-url: https://github.com/CSA-RH/openshift-cma-minecraft/releases/download/world-v1/mc-ragnarok-data.tar.gz
+:repo-url: https://github.com/demon86rm/openshift-cma-minecraft
+:world-url: https://github.com/demon86rm/openshift-cma-minecraft/releases/download/world-v1/mc-ragnarok-data.tar.gz
 :world-sha256: 0d49a056aab00b774608618b42eca2c2887885ad3e747f9189af001ffb64ad6d
 :cma-docs: https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/nodes/automatically-scaling-pods-with-the-custom-metrics-autoscaler-operator

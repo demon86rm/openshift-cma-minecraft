@@ -6,7 +6,7 @@ Custom Metrics Autoscaler (CMA) reading a 0/1 metric published by an always-on p
 
 == View the Course
 
-The full course is published at: https://csa-rh.github.io/openshift-cma-minecraft
+The full course is published at: https://demon86rm.github.io/openshift-cma-minecraft
 
 == Node.js version
 

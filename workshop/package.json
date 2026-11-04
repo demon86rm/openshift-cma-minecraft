@@ -1,7 +1,7 @@
 {
   "name": "openshift-cma-minecraft-workshop",
   "description": "Scale to Zero with the Custom Metrics Autoscaler - Course Documentation Site",
-  "homepage": "https://csa-rh.github.io/openshift-cma-minecraft",
+  "homepage": "https://demon86rm.github.io/openshift-cma-minecraft",
   "dependencies": {
     "@antora/cli": "^2.3.1",
     "@antora/site-generator-default": "^2.3.1",
@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CSA-RH/openshift-cma-minecraft.git"
+    "url": "git+https://github.com/demon86rm/openshift-cma-minecraft.git"
   },
   "license": "Apache-2.0",
   "babel": {
