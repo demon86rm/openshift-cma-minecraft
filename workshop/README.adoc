@@ -10,12 +10,13 @@ The full course is published at: https://csa-rh.github.io/openshift-cma-minecraf
 
 == Node.js version
 
-Antora 2.x needs Node.js 18 (see `.nvmrc`). On newer releases such as Node.js 26 the build exits
-without errors and without output. Without nvm, run it through `npx`:
+Antora 2.x needs Node.js 22 or 20 (see `.nvmrc`). On newer releases such as Node.js 26 the build exits
+without errors and without output. Version managers such as nvm or fnm pick it up from `.nvmrc`;
+without one, run it through `npx`:
 
 [source,bash]
 ----
-npx -y -p node@18 node node_modules/@antora/cli/bin/antora --stacktrace site.yml
+npx -y -p node@22 node node_modules/@antora/cli/bin/antora --stacktrace site.yml
 ----
 
 == Local Development
