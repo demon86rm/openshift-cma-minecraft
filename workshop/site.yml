@@ -1,0 +1,31 @@
+runtime:
+  cache_dir: ./.cache/antora
+
+site:
+  title: Scale to Zero with the Custom Metrics Autoscaler
+  url: https://csa-rh.github.io/openshift-cma-minecraft
+  start_page: cma-minecraft::index.adoc
+
+content:
+  sources:
+    # The playbook lives in workshop/, the git repository is its parent.
+    - url: ./..
+      branches: HEAD
+      start_path: workshop/documentation
+
+asciidoc:
+  attributes:
+    release-version: master
+    page-pagination: true
+  extensions:
+    - ./lib/tab-block.js
+    - ./lib/remote-include-processor.js
+
+ui:
+  bundle:
+    url: https://github.com/redhat-developer-demos/rhd-tutorial-ui/releases/download/v0.1.10/ui-bundle.zip
+    snapshot: true
+  supplemental_files: ./supplemental-ui
+
+output:
+  dir: ./gh-pages

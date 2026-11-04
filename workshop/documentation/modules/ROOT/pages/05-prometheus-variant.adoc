@@ -1,0 +1,181 @@
+= Step 5 - Prometheus Trigger (Optional): Same Signal, Through Monitoring
+include::_attributes.adoc[]
+
+Step 3 lets CMA poll the waker directly. Many platform teams prefer every scaling signal to go
+through cluster monitoring, where it is stored, graphed and alerted on. This optional step swaps
+the trigger for a `prometheus` trigger that reads `minecraft_desired_replicas` from the OpenShift
+User Workload Monitoring stack through Thanos Querier. Behaviour does not change; only the path
+of the metric does.
+
+== Prerequisites
+
+* xref:03-scale-to-zero.adoc[Step 3] completed
+* User Workload Monitoring enabled on the cluster (cluster admin)
+* Rights to grant the `cluster-monitoring-view` cluster role
+
+== How It Works
+
+. A ServiceMonitor tells Prometheus to scrape the waker's `/metrics` every 15 s.
+. A ServiceAccount with `cluster-monitoring-view` gets a token; the token and the cluster CA go into the Secret `keda-prometheus-token`.
+. A `TriggerAuthentication` hands token and CA to KEDA.
+. The new ScaledObject queries `max(minecraft_desired_replicas{namespace="$NAMESPACE", service="mc-ragnarok-waker"})` on Thanos Querier. It has the same name as the Step 3 one, so applying it replaces it.
+
+== Steps to Apply
+
+[#trigger-auth]
+=== 1. Create the credentials for KEDA
+
+*What:* Run `scripts/setup-trigger-auth.sh` to create the ServiceAccount, role binding and token Secret.
+
+*Why:* Thanos Querier requires an authenticated bearer token; the metrics-api trigger needed nothing.
+
+IMPORTANT: The script uses the *current* `oc` context, not `--context`. Switch to it first.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc config use-context {cma-context}
+./scripts/setup-trigger-auth.sh "$NAMESPACE"
+----
+
+.Verify: the Secret exists
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get secret keda-prometheus-token -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                    TYPE     DATA   AGE
+keda-prometheus-token   Opaque   2      10s
+----
+====
+
+'''
+
+[#servicemonitor]
+=== 2. Scrape the waker
+
+icon:clock[] ~30 seconds (estimate: first scrapes after the ServiceMonitor is picked up)
+
+*What:* Apply the ServiceMonitor for the waker.
+
+*Why:* Without it the metric never reaches Prometheus and the trigger would only see empty results.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst '$NAMESPACE' < manifests/waker/servicemonitor.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+----
+
+.Verify: the metric is queryable
+[%collapsible]
+====
+In the web console, open *Observe > Metrics*, select the `$NAMESPACE` project and run:
+
+[source,promql]
+----
+minecraft_desired_replicas
+----
+
+One series, value `0` or `1`.
+====
+
+'''
+
+[#swap-trigger]
+=== 3. Swap the trigger
+
+*What:* Apply the Prometheus ScaledObject and its TriggerAuthentication.
+
+*Why:* This replaces the metrics-api trigger in place; the Deployment keeps its current replica count.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst '$NAMESPACE' < manifests/keda/scaledobject-prometheus.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+----
+
+.Verify: the ScaledObject now uses the prometheus trigger
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.spec.triggers[0].type}{"\n"}'
+oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+prometheus
+NAME          SCALETARGETKIND      SCALETARGETNAME   MIN   MAX   READY   ACTIVE   ...
+mc-ragnarok   apps/v1.Deployment   mc-ragnarok       0     1     True    False    ...
+----
+
+Repeat xref:04-scale-from-zero.adoc[Step 4]: the demo behaves the same.
+====
+
+'''
+
+== What This Solves (Compared to Step 3)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 3 | How This Step Solves It
+
+| The scaling signal is invisible to cluster monitoring
+| The metric is stored in Prometheus, so it can be graphed and alerted on
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| A one-year token in a Secret must be rotated
+| Outside the workshop: rotate it, or use a shorter `--duration`
+|===
+
+== Official Documentation
+
+* link:{cma-docs}#nodes-cma-autoscaling-custom-trigger-prom_nodes-cma-autoscaling-custom-trigger[Understanding the Prometheus trigger]
+* link:{cma-docs}#nodes-cma-autoscaling-custom-trigger-auth[Understanding custom metrics autoscaler trigger authentications]
+* link:https://docs.redhat.com/en/documentation/monitoring_stack_for_red_hat_openshift/4.21/html/configuring_user_workload_monitoring/preparing-to-configure-the-monitoring-stack-uwm[Preparing to configure the user workload monitoring stack]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| `prometheus` trigger through Thanos Querier (this step)
+| Signal stored and visible; needs credentials and adds one scrape interval of delay
+
+| `metrics-api` trigger (Step 3)
+| Simplest and fastest; the signal is not recorded anywhere
+|===
+
+'''
+
+== Reset
+
+Put the metrics-api trigger back first, so the server is never without a ScaledObject, then
+remove the monitoring pieces.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst '$NAMESPACE' < manifests/keda/scaledobject-metricsapi.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+oc delete triggerauthentication keda-prometheus-uwm -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete -f manifests/waker/servicemonitor.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete secret keda-prometheus-token -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc adm policy remove-cluster-role-from-user cluster-monitoring-view -z thanos-reader -n "$NAMESPACE" --context {cma-context}
+oc delete sa thanos-reader -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+----

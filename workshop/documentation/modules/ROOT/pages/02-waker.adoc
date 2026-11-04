@@ -1,0 +1,229 @@
+= Step 2 - The Waker: Something Always Listening
+include::_attributes.adoc[]
+
+A workload at zero replicas cannot answer a player, and cannot report that a player is waiting.
+This step adds `mc-waker`, a small Go proxy that always runs with one replica. Players connect
+to it instead of the server: it forwards their traffic when the server is up, answers with a
+"Sleeping" message when it is not, and publishes the 0/1 metric CMA will use in Step 3.
+
+== Prerequisites
+
+* The Minecraft server from xref:01-minecraft-server.adoc[Step 1] running
+* `NAMESPACE` exported, `{cma-context}` context available
+
+== How It Works
+
+. Every 15 s the waker probes the server (`mc-monitor status`, or a built-in Server List Ping) and records whether it is up and how many players are online.
+. When a client connects and the last probe said "up", the waker opens a TCP connection to `mc-ragnarok:25565` and copies bytes both ways.
+. Otherwise it answers the client itself (a "Sleeping" MOTD, or a disconnect message on login) and raises a wake signal that stays on for `WAKER_WAKE_HOLD` (3 minutes).
+. `GET /scaler` returns `{"value": 1}` when players are online or the wake signal is on, `{"value": 0}` otherwise. The same value is exported as the Prometheus gauge `minecraft_desired_replicas`.
+
+The source walkthrough is in `docs/mc-waker-internals.md`.
+
+== Steps to Apply
+
+[#build-waker]
+=== 1. Build the waker image in the cluster
+
+icon:clock[] ~2-3 minutes (estimate: Go build plus image push to the internal registry)
+
+*What:* Create a binary BuildConfig and build `build/mc-waker` into the `mc-waker` ImageStream.
+
+*Why:* The Deployment pulls `image-registry.openshift-image-registry.svc:5000/$NAMESPACE/mc-waker:latest`; building in-cluster avoids needing an external registry.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc new-build --binary --strategy=docker --name=mc-waker -n "$NAMESPACE" --context {cma-context}
+oc start-build mc-waker --from-dir=build/mc-waker --follow -n "$NAMESPACE" --context {cma-context}
+----
+
+NOTE: The docker build strategy looks for a file named `Dockerfile`; in `build/mc-waker` it is a
+symlink to the `Containerfile`. The image is built on UBI and copies `mc-monitor` from the
+`itzg/minecraft-server` image.
+
+.Verify: the image is in the ImageStream
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get istag mc-waker:latest -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME              IMAGE REFERENCE                                                       UPDATED
+mc-waker:latest   image-registry.openshift-image-registry.svc:5000/minecraft/mc-waker@sha256:...   30 seconds ago
+----
+====
+
+'''
+
+[#deploy-waker]
+=== 2. Deploy the waker
+
+icon:clock[] ~30 seconds (estimate)
+
+*What:* Apply the waker ServiceAccount, Deployment and ClusterIP Service.
+
+*Why:* The ClusterIP Service on port 8080 is how CMA (and Prometheus in Step 5) reach `/scaler` and `/metrics`.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst '$NAMESPACE' < manifests/waker/mc-waker.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+oc rollout status deploy/mc-ragnarok-waker -n "$NAMESPACE" --context {cma-context} --timeout=120s
+----
+
+.Verify: the waker is running
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get deploy,svc -l app.kubernetes.io/name=mc-ragnarok-waker -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/mc-ragnarok-waker   1/1     1            1           40s
+
+NAME                        TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                                AGE
+service/mc-ragnarok-waker   ClusterIP   172.30.x.x     <none>        25565/TCP,19132/UDP,8080/TCP           40s
+----
+====
+
+'''
+
+[#expose-players]
+=== 3. Expose the waker to players
+
+*What:* Apply the NodePort Services and record the address players will use.
+
+*Why:* These Services select the *waker* pod, so there is always something on port 25565 even when the server has zero replicas.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst '$NAMESPACE' < manifests/minecraft/mc-ragnarok-np.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+export NODE_PORT=$(oc get svc mc-ragnarok-nodeport -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.spec.ports[0].nodePort}')
+export NODE_IP=$(oc get nodes -l node-role.kubernetes.io/worker --context {cma-context} -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+echo "Minecraft server address: $NODE_IP:$NODE_PORT"
+----
+
+NOTE: `NODE_IP` above is the node's internal address. If clients connect from outside the
+cluster network, use an address of the node they can actually reach. Add `NODE_IP`, `NODE_PORT`
+and `WAKER_URL` (sub-step 4) to
+`myenv.sh`.
+
+.Verify: the NodePort points at the waker
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get endpoints mc-ragnarok-nodeport -n "$NAMESPACE" --context {cma-context}
+oc get pod -l app.kubernetes.io/name=mc-ragnarok-waker -o wide -n "$NAMESPACE" --context {cma-context}
+----
+
+The endpoint IP is the waker pod IP, not the `mc-ragnarok` pod IP.
+====
+
+'''
+
+[#read-metric]
+=== 4. Read the metric
+
+*What:* Expose the waker HTTP API with an edge Route and query `/scaler` and `/status`.
+
+*Why:* This is exactly the value CMA will poll in Step 3, so it is worth seeing it before handing it over.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc create route edge mc-ragnarok-waker --service=mc-ragnarok-waker --port=8080 -n "$NAMESPACE" --context {cma-context}
+export WAKER_URL="https://$(oc get route mc-ragnarok-waker -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.spec.host}')"
+curl -sk "$WAKER_URL/scaler"
+curl -sk "$WAKER_URL/status"
+----
+
+NOTE: `curl -k` skips TLS verification because workshop clusters often use self-signed ingress
+certificates. In production, trust the cluster CA instead.
+
+.Verify: the server is up, so the metric is driven by players
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+{"value":0}
+----
+
+`0` with the server running is correct: nobody is online and no wake is pending. Nothing acts on
+it yet, so the server keeps running.
+====
+
+'''
+
+== What This Solves (Compared to Step 1)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 1 | How This Step Solves It
+
+| No stable entry point while the server is down
+| The NodePort targets the waker, which is always up and answers on 25565
+
+| Demand cannot be measured on a workload at zero replicas
+| The waker sees connection attempts and publishes them as a 0/1 metric
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Nothing acts on the metric: the server still runs 24/7
+| xref:03-scale-to-zero.adoc[Step 3]
+|===
+
+== Official Documentation
+
+* link:{cma-docs}[Automatically scaling pods with the Custom Metrics Autoscaler Operator]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Protocol-aware proxy with its own metric (this step)
+| Speaks the Minecraft protocol, so it can answer a sleeping-server ping and count real demand
+
+| KEDA HTTP add-on interceptor
+| Holds requests until the backend is up, but only for HTTP; Minecraft uses raw TCP and UDP
+
+| OpenShift Serverless (Knative)
+| Request-driven scale to zero for HTTP and gRPC; not suited to long-lived TCP game sessions. See `docs/keda-vs-knative.md`
+|===
+
+'''
+
+== Reset
+
+Remove the entry points first so no client hits a waker that is going away, then the waker and
+its build.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete route mc-ragnarok-waker -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-np.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete -f manifests/waker/mc-waker.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete bc,is -l build=mc-waker -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+----

@@ -1,0 +1,164 @@
+= Step 3 - Scale to Zero: Hand the Metric to CMA
+include::_attributes.adoc[]
+
+The waker already knows when the server is needed. This step tells CMA to act on it: a
+`ScaledObject` polls the waker's `/scaler` endpoint and scales `mc-ragnarok` between zero and
+one replica. With nobody online, the server goes to sleep about a minute later.
+
+== Prerequisites
+
+* The waker from xref:02-waker.adoc[Step 2] running and reachable on its ClusterIP Service
+* CMA and the `KedaController` from xref:00-setup.adoc#install-cma[Cluster Setup]
+
+== How It Works
+
+`manifests/keda/scaledobject-metricsapi.yaml` uses the `metrics-api` trigger:
+
+[cols="2,2,4",options="header"]
+|===
+| Field | Value | Effect
+| `url` | `http://mc-ragnarok-waker.$NAMESPACE.svc.cluster.local:8080/scaler` | Endpoint polled by KEDA
+| `valueLocation` | `value` | JSON field read from the response
+| `pollingInterval` | `15` | Seconds between polls
+| `activationTargetValue` | `0` | Above 0 the ScaledObject is *active* and scales from zero; at 0 it may go to zero
+| `targetValue` | `1` | HPA divisor: `ceil(1 / 1)` = 1 replica when active
+| `minReplicaCount` / `maxReplicaCount` | `0` / `1` | Scale-to-zero range
+| `cooldownPeriod` | `60` | Seconds at 0 before scaling to zero (raise to 600+ in production)
+| `fallback.replicas` | `1` | If the waker is unreachable 3 times in a row, keep the server up (fail open)
+|===
+
+CMA handles the 0 to 1 and 1 to 0 transitions itself and creates a HorizontalPodAutoscaler
+(`keda-hpa-mc-ragnarok`) for anything above one replica.
+
+== Steps to Apply
+
+[#apply-scaledobject]
+=== 1. Apply the ScaledObject
+
+*What:* Create the `mc-ragnarok` ScaledObject with the metrics-api trigger.
+
+*Why:* This is the only object that connects the waker's metric to the Deployment's replica count.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst '$NAMESPACE' < manifests/keda/scaledobject-metricsapi.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+----
+
+.Verify: the ScaledObject is ready
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME          SCALETARGETKIND      SCALETARGETNAME   MIN   MAX   READY   ACTIVE   FALLBACK   PAUSED   AGE
+mc-ragnarok   apps/v1.Deployment   mc-ragnarok       0     1     True    False    False      False    20s
+----
+
+`ACTIVE=False` means the metric is at or below `activationTargetValue`: the server is allowed to
+go to zero.
+====
+
+'''
+
+[#watch-zero]
+=== 2. Watch the server reach zero
+
+icon:clock[] ~1-2 minutes (estimate: one poll plus `cooldownPeriod` 60 s)
+
+*What:* Watch the Deployment until it reports zero replicas.
+
+*Why:* This is the cost saving: no player, no server pod.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get deploy mc-ragnarok -n "$NAMESPACE" --context {cma-context} -w
+----
+
+.Verify: zero replicas, waker still up
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get deploy -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok         0/0     0            0           15m
+mc-ragnarok-waker   1/1     1            1           8m
+----
+====
+
+TIP: If the server does not go down, someone may have pinged it: each ping refreshes the 3 minute
+wake hold. Check `curl -sk "$WAKER_URL/status"`.
+
+'''
+
+== What This Solves (Compared to Step 2)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 2 | How This Step Solves It
+
+| The server runs 24/7
+| CMA scales it to zero once the metric has been 0 for `cooldownPeriod`
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| We have not yet seen a player bring it back
+| xref:04-scale-from-zero.adoc[Step 4]
+
+| The trigger polls the waker directly; some teams prefer to go through cluster monitoring
+| xref:05-prometheus-variant.adoc[Step 5]
+|===
+
+== Official Documentation
+
+* link:{cma-docs}#nodes-cma-autoscaling-custom-overview-trigger[Understanding custom metrics autoscaler triggers]
+* link:{cma-docs}#nodes-cma-autoscaling-custom-pausing[Pausing the custom metrics autoscaler for a scaled object]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| `metrics-api` trigger (this step)
+| No dependency besides the waker; no credentials
+
+| `prometheus` trigger
+| Same metric through User Workload Monitoring; needs a TriggerAuthentication (Step 5)
+
+| Plain HorizontalPodAutoscaler
+| Cannot scale to zero and cannot read an external 0/1 signal without a custom metrics adapter
+|===
+
+'''
+
+== Reset
+
+Delete the ScaledObject, then scale the server back up: deleting the ScaledObject leaves the
+Deployment at whatever replica count it had, possibly zero.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f manifests/keda/scaledobject-metricsapi.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found --wait
+oc scale deploy/mc-ragnarok --replicas=1 -n "$NAMESPACE" --context {cma-context}
+----

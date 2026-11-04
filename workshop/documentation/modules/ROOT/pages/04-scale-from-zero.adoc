@@ -1,0 +1,242 @@
+= Step 4 - Scale from Zero: The Live Demo
+include::_attributes.adoc[]
+
+This is the moment the workshop builds up to. The server is at zero replicas; a player opens
+Minecraft and adds the server. The waker answers, raises the metric, CMA scales the server to one
+replica, and a short while later the player walks into the workshop world to find the finale.
+
+image::04-scale-from-zero-sequence.png[Sequence: the player pings mc-waker, the waker answers Sleeping and raises the wake signal, CMA polls /scaler and scales mc-ragnarok from 0 to 1, the waker probes the server until it is up, then proxies the reconnecting player; after the cooldown CMA scales back to 0]
+
+== Prerequisites
+
+* The ScaledObject from xref:03-scale-to-zero.adoc[Step 3] in place and `mc-ragnarok` at `0/0`
+* `NODE_IP` and `NODE_PORT` from xref:02-waker.adoc#expose-players[Step 2]
+* Minecraft: Java Edition {mc-version} on the presenter's machine
+
+TIP: Keep two terminals visible to the audience: one running
+`oc get deploy mc-ragnarok -n "$NAMESPACE" --context {cma-context} -w`, one with the Minecraft
+client.
+
+== Steps to Apply
+
+[#knock]
+=== 1. Knock on the door
+
+*What:* In Minecraft, open *Multiplayer > Add Server* and enter `$NODE_IP:$NODE_PORT`.
+
+*Why:* Refreshing the server list sends a Server List Ping; that ping reaches the waker, which is the wake-up signal.
+
+The server list shows the sleeping message instead of a live server.
+
+NOTE: The waker advertises protocol version 769 (Minecraft 1.21.4) in its sleeping status, so the
+client may flag a version mismatch next to the entry. This only affects the sleeping entry; the
+real server reports {mc-version} once it is up.
+
+.Verify: the wake signal is on
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk "$WAKER_URL/scaler"
+----
+
+[.console-output]
+[source,bash]
+----
+{"value":1}
+----
+====
+
+'''
+
+[#wake-up]
+=== 2. Watch the wake-up
+
+icon:clock[] ~1-2 minutes (estimate: up to 15 s for the next poll, image start, at least 30 s to the first readiness check, up to 15 s for the waker's next probe)
+
+*What:* Watch CMA activate the ScaledObject and the Deployment go from 0 to 1.
+
+*Why:* This is scale-from-zero driven by a metric the workload itself could not have produced.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context {cma-context}
+oc get deploy mc-ragnarok -n "$NAMESPACE" --context {cma-context} -w
+----
+
+.Verify: the ScaledObject is active and the server ready
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+NAME          SCALETARGETKIND      SCALETARGETNAME   MIN   MAX   READY   ACTIVE   ...
+mc-ragnarok   apps/v1.Deployment   mc-ragnarok       0     1     True    True     ...
+
+NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok   0/1     1            0           20m
+mc-ragnarok   1/1     1            1           21m
+----
+====
+
+'''
+
+[#join]
+=== 3. Join the server
+
+*What:* Press *Refresh* in the server list, then join.
+
+*Why:* Once the waker's probe sees the server up, it stops answering on the server's behalf and proxies the connection through.
+
+.Verify: the waker is proxying
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk "$WAKER_URL/status"
+----
+
+The Java upstream is reported up with one player online.
+====
+
+TIP: No Minecraft client at hand? `curl -skX POST "$WAKER_URL/wake"` raises the same wake signal.
+
+'''
+
+[#the-end]
+=== 4. The finale
+
+*What:* Follow the guided route from the spawn point to the structure.
+
+*Why:* A visible payoff that the world, and the volume it lives on, survived the trip to zero and back.
+
+IMPORTANT: Only a player's *first* login starts near the world spawn. Minecraft saves each
+account's position in `/data/ragnarok/playerdata/<UUID>.dat` and returns the player there on the
+next login. The `world-v1` archive already contains the saved data of the account that built
+the world, and every rehearsal on the cluster adds the presenter's own. Before the session,
+reset the presenter's position as described in <<reset-position>>.
+
+The route is marked in the world, so no coordinates are needed:
+
+. From the spawn point, follow the path.
+. At the end of the path, climb the ladder.
+. At the top, a sign faces the player, and the giant "THE END" lettering fills the sky behind it.
+
+TIP: Walk the route once while rehearsing, so you know how long it takes on stage.
+
+.Verify: the audience sees "THE END"
+[%collapsible]
+====
+The structure is in front of the player. No screenshot here on purpose: it is the reveal.
+====
+
+'''
+
+[#back-to-zero]
+=== 5. Back to zero
+
+icon:clock[] ~4-5 minutes (estimate: 3 minute wake hold, then `cooldownPeriod` 60 s)
+
+*What:* Disconnect and watch the server scale back to zero.
+
+*Why:* It closes the loop: the server only exists while someone needs it.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get deploy mc-ragnarok -n "$NAMESPACE" --context {cma-context} -w
+----
+
+.Verify: the server is at zero again
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok   0/0     0            0           30m
+----
+====
+
+'''
+
+== What This Solves (Compared to Step 3)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 3 | How This Step Solves It
+
+| Scale to zero alone would leave players locked out
+| A player's connection attempt brings the server back within a couple of minutes
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| The first player waits for the cold start
+| Inherent to scale to zero; trade it against cost with `cooldownPeriod` and `WAKER_WAKE_HOLD`
+
+| The trigger bypasses cluster monitoring
+| xref:05-prometheus-variant.adoc[Step 5 (optional)]
+|===
+
+== Official Documentation
+
+* link:{cma-docs}[Automatically scaling pods with the Custom Metrics Autoscaler Operator]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Wake on connection attempt (this demo)
+| Zero idle cost; the first player sees a short "Sleeping" phase
+
+| Keep one warm replica (`minReplicaCount: 1`)
+| No cold start, but no saving either
+
+| Scheduled scaling (Cron trigger)
+| Good for predictable sessions; wastes resources outside them and misses unplanned players
+|===
+
+'''
+
+== Reset
+
+Nothing to undo: the demo leaves the cluster in the same state as the end of Step 3. To rerun it
+immediately without waiting for the cooldown, wait for `0/0` or delete and reapply the ScaledObject
+from xref:03-scale-to-zero.adoc#apply-scaledobject[Step 3].
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get deploy mc-ragnarok -n "$NAMESPACE" --context {cma-context}
+----
+
+[#reset-position]
+=== Reset the presenter's position
+
+Run this after a rehearsal, while the server is still up and the presenter is *disconnected*:
+the server writes the player file again on logout, so deleting it during a session has no effect.
+The next login then starts at the world spawn, at the beginning of the path.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc exec deploy/mc-ragnarok -c mc-ragnarok -n "$NAMESPACE" --context {cma-context} -- \
+  ls /data/ragnarok/playerdata
+oc exec deploy/mc-ragnarok -c mc-ragnarok -n "$NAMESPACE" --context {cma-context} -- \
+  bash -c 'rm -f /data/ragnarok/playerdata/<UUID>.dat /data/ragnarok/playerdata/<UUID>.dat_old'
+----
+
+Replace `<UUID>` with the presenter's account UUID (one file per account that has joined).
+If the server is already at zero replicas, wake it with `curl -skX POST "$WAKER_URL/wake"`
+first. To reset the whole world instead, repeat
+xref:01-minecraft-server.adoc#seed-world[Step 1, sub-step 3] with the old world removed.

@@ -37,3 +37,10 @@ mc-data/*.tar.gz
 
 # Archify working folders (candidates, receipts)
 .archify/
+
+# Antora workshop site (workshop/)
+workshop/node_modules/
+workshop/.cache/
+workshop/gh-pages/
+workshop/package-lock.json
+myenv.sh

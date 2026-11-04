@@ -1,0 +1,65 @@
+= Scale to Zero with the Custom Metrics Autoscaler
+
+Facilitator-led workshop: a Minecraft server on OpenShift scales from zero to one replica when a
+player connects, and back to zero when nobody plays. The scaling decision comes from the
+Custom Metrics Autoscaler (CMA) reading a 0/1 metric published by an always-on proxy, `mc-waker`.
+
+== View the Course
+
+The full course is published at: https://csa-rh.github.io/openshift-cma-minecraft
+
+== Node.js version
+
+Antora 2.x needs Node.js 18 (see `.nvmrc`). On newer releases such as Node.js 26 the build exits
+without errors and without output. Without nvm, run it through `npx`:
+
+[source,bash]
+----
+npx -y -p node@18 node node_modules/@antora/cli/bin/antora --stacktrace site.yml
+----
+
+== Local Development
+
+To preview the course site locally (from this `workshop/` directory):
+
+[source,bash]
+----
+npm install
+npm run dev
+----
+
+This starts a live-reload server at http://localhost:3000.
+
+== Build the Site
+
+[source,bash]
+----
+npx antora site.yml
+----
+
+The generated site is output to `workshop/gh-pages/`.
+
+== Repository Structure
+
+[cols="2,4",options="header"]
+|===
+| Directory | Purpose
+
+| `workshop/documentation/`
+| Antora courseware source (AsciiDoc pages, navigation, attributes)
+
+| `manifests/minecraft/`
+| Step 01 - Minecraft server: secrets, PVCs, Deployment, Services
+
+| `manifests/waker/`
+| Step 02 - `mc-waker` Deployment and Service; Step 05 - ServiceMonitor
+
+| `manifests/keda/`
+| Setup - `KedaController`; Step 03 - metrics-api ScaledObject; Step 05 - Prometheus ScaledObject
+
+| `build/mc-waker/`
+| Go source and Containerfile of the waker (built in-cluster in Step 02)
+
+| `scripts/`
+| `bootstrap.sh` (one-shot install of everything) and `setup-trigger-auth.sh` (Step 05)
+|===

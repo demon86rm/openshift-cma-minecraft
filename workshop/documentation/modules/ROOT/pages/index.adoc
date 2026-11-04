@@ -1,0 +1,62 @@
+= Scale to Zero with the Custom Metrics Autoscaler
+:page-layout: home
+:!sectids:
+include::_attributes.adoc[]
+
+[.text-center.strong]
+== A Minecraft server that sleeps until someone wants to play
+
+A stock HorizontalPodAutoscaler never goes below one replica, and a workload at zero replicas
+cannot report its own demand. This workshop solves both problems with the OpenShift Custom
+Metrics Autoscaler (CMA): a small always-on proxy, `mc-waker`, answers players while the server
+sleeps and publishes a 0/1 "please wake up" metric; CMA reads it and scales the Minecraft
+Deployment from zero to one and back. The facilitator runs every step; the audience joins the
+server at the end.
+
+image::architecture.png[Architecture: players reach mc-waker through a NodePort Service; CMA reads the waker metric and scales the mc-ragnarok Deployment between 0 and 1]
+
+[.tiles.browse]
+== Browse Modules
+
+[.tile]
+.xref:00-setup.adoc[Cluster Setup]
+* xref:00-setup.adoc#prerequisites[Prerequisites]
+* xref:00-setup.adoc#install-cma[Install CMA]
+* xref:00-setup.adoc#export-variables[Export Variables]
+
+[.tile]
+.xref:01-minecraft-server.adoc[Step 1: Minecraft Server]
+* xref:01-minecraft-server.adoc#seed-world[Seed the World]
+* xref:01-minecraft-server.adoc#deploy-server[Deploy the Server]
+
+[.tile]
+.xref:02-waker.adoc[Step 2: The Waker]
+* xref:02-waker.adoc#deploy-waker[Deploy the Waker]
+* xref:02-waker.adoc#read-metric[Read the Metric]
+
+[.tile]
+.xref:03-scale-to-zero.adoc[Step 3: Scale to Zero]
+* xref:03-scale-to-zero.adoc#apply-scaledobject[Apply the ScaledObject]
+* xref:03-scale-to-zero.adoc#watch-zero[Watch It Reach Zero]
+
+[.tile]
+.xref:04-scale-from-zero.adoc[Step 4: Scale from Zero]
+* xref:04-scale-from-zero.adoc#knock[Knock on the Door]
+* xref:04-scale-from-zero.adoc#the-end[The Finale]
+
+[.tile]
+.xref:05-prometheus-variant.adoc[Step 5: Prometheus Trigger]
+* xref:05-prometheus-variant.adoc#trigger-auth[Trigger Authentication]
+* xref:05-prometheus-variant.adoc#swap-trigger[Swap the Trigger]
+
+== Environment
+
+[cols="2,3",options="header"]
+|===
+| Item | Value
+| OpenShift version | {ocp-version} (tested on 4.21)
+| Custom Metrics Autoscaler | {cma-version}
+| Minecraft Java server / client | {mc-version}
+| `oc` context name | `{cma-context}`
+| Format | Facilitator-led demo, single namespace
+|===

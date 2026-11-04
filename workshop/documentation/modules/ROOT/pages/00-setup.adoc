@@ -1,0 +1,267 @@
+= Cluster Setup
+include::_attributes.adoc[]
+
+This page prepares the facilitator's laptop and the cluster: one `oc` context, the Custom
+Metrics Autoscaler Operator with its `KedaController`, the workshop variables, and a local clone
+of the repository. Everything after this page runs from the repository root.
+
+Two paths are available:
+
+* *Option A* - fresh cluster: install the Custom Metrics Autoscaler yourself.
+* *Option B* - CMA already installed by a cluster admin: log in, verify, and move on.
+
+[#prerequisites]
+== Prerequisites
+
+[cols="2,3",options="header"]
+|===
+| Requirement | Notes
+| OpenShift cluster | {ocp-version}, with a default StorageClass (two 1Gi `ReadWriteOnce` PVCs)
+| Permissions | `cluster-admin` for Option A (operator install and cluster-scoped `KedaController`); project admin is enough for Steps 1-4 once CMA exists
+| `oc` CLI | Matching the cluster version
+| `envsubst` | Ships with `gettext` (`brew install gettext` on macOS)
+| `curl` and `sha256sum` or `shasum` | Download and verify the workshop world
+| Minecraft: Java Edition | Version {mc-version}, with a valid account (the server runs in online mode)
+| Network | The client must reach a cluster node on the NodePort assigned in Step 2
+|===
+
+NOTE: The NodePort is reachable from a laptop only if the nodes are. On many cloud and managed
+clusters (ROSA, ARO) worker nodes sit in private subnets: check this before the session, or plan
+a jump host or a load balancer in front of the NodePort.
+
+'''
+
+[#login-cluster]
+== Log In to the Cluster
+
+=== 1. Create the `{cma-context}` context
+
+*What:* Log in once and rename the generated context to `{cma-context}`.
+
+*Why:* Every command in this workshop passes `--context {cma-context}`, so the steps keep working even if you switch clusters in between.
+
+Put the login in a personal, gitignored `myenv.sh` so you can rerun it before the session:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat > myenv.sh <<'ENV'
+# Console: https://console-openshift-console.apps.<cluster-domain>
+
+# -- Workshop variables (used by envsubst in the manifests) --
+export NAMESPACE="minecraft"
+export CLUSTER_API_URL="https://api.<cluster-domain>:6443"
+
+# -- Context cleanup (idempotent) --
+oc config delete-context {cma-context} 2>/dev/null
+
+# -- Login + rename context --
+oc login "$CLUSTER_API_URL" --username <user> --password <password>
+oc config rename-context "$(oc config current-context)" {cma-context}
+ENV
+source myenv.sh
+----
+
+.Verify: the context exists and works
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc whoami --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+<user>
+----
+====
+
+'''
+
+[#install-cma]
+== Install the Custom Metrics Autoscaler
+
+=== 2. Install the operator (Option A)
+
+icon:clock[] ~1 minute (estimate)
+
+*What:* Subscribe to the Custom Metrics Autoscaler Operator from the `redhat-operators` catalog.
+
+*Why:* CMA is the Red Hat build of KEDA: it adds the `ScaledObject` API and the scale-to-zero logic the stock HorizontalPodAutoscaler lacks.
+
+Skip this sub-step for Option B.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat <<'EOF2' | oc apply --context {cma-context} -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-keda
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-keda
+  namespace: openshift-keda
+spec: {}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-custom-metrics-autoscaler-operator
+  namespace: openshift-keda
+spec:
+  channel: stable
+  name: openshift-custom-metrics-autoscaler-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF2
+----
+
+.Verify: the operator CSV succeeded
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get csv -n openshift-keda --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                                DISPLAY                     VERSION   PHASE
+custom-metrics-autoscaler.v2.19.0   Custom Metrics Autoscaler   2.19.0    Succeeded
+----
+====
+
+'''
+
+=== 3. Create the `KedaController` (Option A)
+
+icon:clock[] ~1 minute (estimate)
+
+*What:* Apply `manifests/keda/kedacontroller.yaml` once per cluster.
+
+*Why:* The operator does nothing until a `KedaController` named `keda` exists in `openshift-keda`; it starts the KEDA operator, the metrics API server, and the admission webhooks.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f manifests/keda/kedacontroller.yaml --context {cma-context}
+----
+
+NOTE: `watchNamespace: ''` makes KEDA watch every namespace. The `KedaController` is
+cluster-scoped and shared: do not delete it in a reset if other teams use CMA.
+
+.Verify: the KEDA pods are running (Option A and Option B)
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get kedacontroller,pods -n openshift-keda --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                                AGE
+kedacontroller.keda.sh/keda         2m
+
+NAME                                                  READY   STATUS    RESTARTS   AGE
+pod/custom-metrics-autoscaler-operator-...            1/1     Running   0          3m
+pod/keda-admission-...                                1/1     Running   0          2m
+pod/keda-metrics-apiserver-...                        1/1     Running   0          2m
+pod/keda-operator-...                                 1/1     Running   0          2m
+----
+====
+
+'''
+
+[#export-variables]
+== Export Workshop Variables
+
+=== 4. Export the variables
+
+*What:* Export `NAMESPACE` in every shell you use for the workshop (`source myenv.sh` does it).
+
+*Why:* The manifests contain `+${NAMESPACE}+` placeholders that `envsubst` fills in before `oc apply`.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export NAMESPACE=minecraft
+----
+
+[cols="2,3,4",options="header"]
+|===
+| Variable | Used in | Description
+| `NAMESPACE` | `manifests/waker/mc-waker.yaml`, `manifests/keda/*.yaml` | Project that hosts the server, the waker and the ScaledObject
+| `CLUSTER_API_URL` | `myenv.sh` | API endpoint used by `oc login`
+| `NODE_IP` | Step 4 | Address of a node the Minecraft client can reach (set in Step 2)
+| `NODE_PORT` | Step 4 | Port of the `mc-ragnarok-nodeport` Service (set in Step 2)
+| `WAKER_URL` | Steps 3-4 | HTTPS Route to the waker API (set in Step 2)
+|===
+
+IMPORTANT: Always apply the manifests with `envsubst '$NAMESPACE' < file.yaml | oc apply ...`.
+A plain `oc apply -f` would send the literal string `+${NAMESPACE}+` to the cluster, and a plain
+`envsubst` without the argument would blank any other `+${...}+` token.
+
+.Verify: the variable is set
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+echo "$NAMESPACE"
+----
+
+[.console-output]
+[source,bash]
+----
+minecraft
+----
+====
+
+'''
+
+[#clone-repo]
+== Clone the Repository
+
+=== 5. Clone and enter the repository
+
+*What:* Clone the workshop repository and work from its root.
+
+*Why:* Every step applies files from `manifests/`, `scripts/` and `build/` by relative path.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+git clone {repo-url}.git
+cd openshift-cma-minecraft
+----
+
+.Verify: you are at the repository root
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+ls
+----
+
+[.console-output]
+[source,bash]
+----
+LICENSE  README.md  build  docs  manifests  scripts  workshop
+----
+====
+
+TIP: `scripts/bootstrap.sh` installs everything in Steps 1-3 in one go. Use it to rehearse or to
+recover quickly during a live session; the steps below do the same thing by hand so the audience
+can see each piece.

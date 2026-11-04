@@ -1,0 +1,6 @@
+name: cma-minecraft
+title: Scale to Zero with the Custom Metrics Autoscaler
+version: master
+nav:
+  - modules/ROOT/nav.adoc
+start_page: ROOT:index.adoc

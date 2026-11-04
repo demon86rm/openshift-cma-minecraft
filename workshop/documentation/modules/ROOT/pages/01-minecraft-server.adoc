@@ -1,0 +1,284 @@
+= Step 1 - Minecraft Server: An Always-On Baseline
+include::_attributes.adoc[]
+
+This step deploys the Minecraft server the classic way: one replica, always running, with the
+workshop world preloaded on its volume. It works, but it burns CPU and memory around the clock
+even when nobody plays. The following steps remove that waste without changing the server
+itself.
+
+== Prerequisites
+
+* CMA installed and the `{cma-context}` context created, as described in xref:00-setup.adoc[Cluster Setup]
+* `NAMESPACE` exported in your shell
+* `oc` CLI authenticated with rights to create a project
+
+NOTE: The server images (`docker.io/itzg/minecraft-server` and `docker.io/itzg/minecraft-bedrock-server`)
+come from Docker Hub: there is no Red Hat build of a Minecraft server. The pod also runs a Bedrock
+container on UDP 19132; this workshop focuses on the Java path, Bedrock follows the same pattern.
+
+== How It Works
+
+. `mc-ragnarok` is a Deployment with `replicas: 1` and the `Recreate` strategy: the `ReadWriteOnce` world volume can only be mounted by one pod at a time.
+. The world (`ragnarok`, with a large "THE END" structure built for the finale) is extracted into the `mc-ragnarok-datadir` PVC *before* the server first boots; otherwise the server would generate a fresh world.
+. The ClusterIP Service `mc-ragnarok` is internal only. Players will never connect to it directly: from Step 2 they reach the waker instead.
+
+== Steps to Apply
+
+[#create-project]
+=== 1. Create the project
+
+*What:* Create the project that hosts the whole workshop.
+
+*Why:* Every namespaced object (server, waker, ScaledObject) lives here, so a reset is a single project delete if needed.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc new-project "$NAMESPACE" --context {cma-context}
+----
+
+.Verify: the project exists
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get project "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME        DISPLAY NAME   STATUS
+minecraft                  Active
+----
+====
+
+'''
+
+[#storage]
+=== 2. Create the secrets and the volumes
+
+*What:* Apply the two Secrets and the two PersistentVolumeClaims.
+
+*Why:* The Deployment references them; the Java world PVC must exist before we can seed it.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+for f in mc-ragnarok-rcon-secret mc-ragnarok-curseforge-secret mc-ragnarok-pvc; do
+  envsubst '$NAMESPACE' < manifests/minecraft/$f.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+done
+----
+
+NOTE: Both Secrets ship with a `CHANGEME!` placeholder. The server runs `TYPE: VANILLA`, so the
+CurseForge key is not used; RCON is disabled.
+
+.Verify: the PVCs exist
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pvc -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                          STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mc-ragnarok-bedrock-datadir   Pending                                      gp3-csi        10s
+mc-ragnarok-datadir           Pending                                      gp3-csi        10s
+----
+
+`Pending` is expected with a `WaitForFirstConsumer` StorageClass: the volume is bound when the
+first pod mounts it.
+====
+
+'''
+
+[#seed-world]
+=== 3. Seed the workshop world
+
+icon:clock[] ~1 minute (estimate: download ~10 s, helper pod ~30 s, extraction ~10 s)
+
+*What:* Download the world archive from the `world-v1` release, verify it, and extract it into the PVC through a short-lived helper pod.
+
+*Why:* The server must find `/data/ragnarok/level.dat` on its very first boot, or it generates a new world without the finale structure.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -fsSL --create-dirs -o mc-data/mc-ragnarok-data.tar.gz {world-url}
+echo "{world-sha256}  mc-data/mc-ragnarok-data.tar.gz" | shasum -a 256 -c -
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cat <<'EOF2' | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mc-ragnarok-seed
+  labels:
+    app.kubernetes.io/part-of: mc-ragnarok
+spec:
+  restartPolicy: Never
+  containers:
+    - name: seed
+      image: docker.io/itzg/minecraft-server:latest
+      command: ["bash", "-c", "exec sleep 1200"]
+      volumeMounts:
+        - { mountPath: /data, name: datadir }
+  volumes:
+    - name: datadir
+      persistentVolumeClaim:
+        claimName: mc-ragnarok-datadir
+EOF2
+oc wait --for=condition=Ready pod/mc-ragnarok-seed -n "$NAMESPACE" --context {cma-context} --timeout=300s
+oc exec -i mc-ragnarok-seed -n "$NAMESPACE" --context {cma-context} -- bash -c \
+  "mkdir -p /data/ragnarok && tar xzf - -C /data/ragnarok && chmod -R g+rwX /data/ragnarok" \
+  < mc-data/mc-ragnarok-data.tar.gz
+----
+
+.Verify: the world is on the volume
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc exec mc-ragnarok-seed -n "$NAMESPACE" --context {cma-context} -- ls /data/ragnarok/level.dat
+----
+
+[.console-output]
+[source,bash]
+----
+/data/ragnarok/level.dat
+----
+====
+
+Release the volume before the server starts (the PVC is `ReadWriteOnce`):
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete pod mc-ragnarok-seed -n "$NAMESPACE" --context {cma-context} --wait
+----
+
+'''
+
+[#deploy-server]
+=== 4. Deploy the server
+
+icon:clock[] ~1-2 minutes (estimate: image pull, then at least 30 s before the first readiness check)
+
+*What:* Apply the Deployment and the internal ClusterIP Services, then wait for the rollout.
+
+*Why:* This is the workload we will later scale between zero and one replica.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+for f in mc-ragnarok-deploy mc-ragnarok-svc; do
+  envsubst '$NAMESPACE' < manifests/minecraft/$f.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+done
+oc rollout status deploy/mc-ragnarok -n "$NAMESPACE" --context {cma-context} --timeout=300s
+----
+
+IMPORTANT: Do not apply `manifests/minecraft/mc-ragnarok-np.yaml` yet. That NodePort Service
+selects the *waker* pod, which does not exist until Step 2.
+
+NOTE: The readiness and liveness probes run `mc-health` with `initialDelaySeconds: 30` and up to
+20 failures 5 s apart, so a slow first boot has roughly two minutes before the container is
+restarted.
+
+.Verify: the server is ready
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get deploy mc-ragnarok -n "$NAMESPACE" --context {cma-context}
+----
+
+[.console-output]
+[source,bash]
+----
+NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok   1/1     1            1           2m
+----
+
+Optional: reach it from your laptop and connect a client to `localhost:25565`.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc port-forward svc/mc-ragnarok 25565:25565 -n "$NAMESPACE" --context {cma-context}
+----
+====
+
+'''
+
+== What This Solves (Compared to No Deployment)
+
+[cols="2,3",options="header"]
+|===
+| Problem | How This Step Solves It
+
+| No server
+| A Minecraft server runs on OpenShift with a persistent, preloaded world
+|===
+
+== What This Does NOT Solve (Yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining Problem | Addressed In
+
+| Players have no stable entry point that survives the server being down
+| xref:02-waker.adoc[Step 2]
+
+| The server runs (and costs) 24/7, even with nobody online
+| xref:03-scale-to-zero.adoc[Step 3]
+|===
+
+== Official Documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/storage/understanding-persistent-storage[Understanding persistent storage]
+
+== Alternatives Considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Seed with a helper pod (this step)
+| Simple and explicit; needs the Deployment to be stopped because the PVC is `ReadWriteOnce`
+
+| Init container that downloads the world
+| Runs on every start, needs network access from the pod, and must be made idempotent
+
+| Let the server generate a world
+| No setup at all, but no finale structure
+|===
+
+'''
+
+== Reset
+
+Delete the server first, then its storage: the PVC cannot be released while a pod mounts it.
+
+WARNING: Deleting the PVC deletes the seeded world. Repeat sub-step 3 afterwards.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc delete -f manifests/minecraft/mc-ragnarok-svc.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-deploy.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found --wait
+oc delete pod mc-ragnarok-seed -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-pvc.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-curseforge-secret.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-rcon-secret.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete project "$NAMESPACE" --context {cma-context} --ignore-not-found
+----
