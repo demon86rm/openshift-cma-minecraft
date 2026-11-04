@@ -46,7 +46,8 @@ func runProxy(ctx context.Context, s *state) {
 //  2. If the probe says the upstream is down (or stale), do NOT dial — the
 //     pod might still be in early startup where TCP connects but the SLP
 //     server hasn't bound yet, which would hang the client. Instead, answer
-//     the SLP locally with a "sleeping" status and signal a wake.
+//     the SLP locally with a "sleeping" status and, once the client has sent
+//     a valid handshake, signal a wake.
 func handleConn(ctx context.Context, s *state, client net.Conn) {
 	defer client.Close()
 	s.activeConns.Add(1)
@@ -70,8 +71,7 @@ func handleConn(ctx context.Context, s *state, client net.Conn) {
 		s.setUpstream(false, 0)
 	}
 
-	s.signalWake()
-	if err := handleSleepingClient(client, s.cfg); err != nil {
+	if err := handleSleepingClient(client, s.cfg, s.signalWake); err != nil {
 		// Clients drop SLP connections aggressively; only log unexpected
 		// failures at debug level.
 		if !errors.Is(err, io.EOF) && !errors.Is(err, net.ErrClosed) {

@@ -12,9 +12,9 @@ package main
 //   * Forward the datagram upstream.
 //   * A per-session reader goroutine forwards every reply back to the
 //     client via the shared public listener.
-//   * Signal a wake on the first datagram from a new client (covers cached
-//     server-list entries that go straight to OpenConnectionRequest1
-//     without re-pinging first).
+//   * Signal a wake on an Unconnected Ping or an Open Connection Request 1
+//     (covers cached server-list entries that skip the ping); other
+//     datagrams never wake the server.
 //   * If the upstream is DOWN, fall back to the original behaviour: when
 //     the datagram is an Unconnected Ping, reply locally with a canned
 //     "Sleeping" Pong; everything else is silently dropped (client retries).
@@ -37,8 +37,12 @@ import (
 )
 
 const (
-	raknetIDUnconnectedPing = 0x01
-	raknetIDUnconnectedPong = 0x1C
+	raknetIDUnconnectedPing    = 0x01
+	raknetIDOpenConnectionReq1 = 0x05
+	raknetIDUnconnectedPong    = 0x1C
+
+	// raknetMinOCR1Len = 1 (id) + 16 (magic) + 1 (protocol version)
+	raknetMinOCR1Len = 1 + 16 + 1
 
 	// raknetMinPingLen = 1 (id) + 8 (time) + 16 (magic) + 8 (clientGUID)
 	raknetMinPingLen = 1 + 8 + 16 + 8
@@ -170,11 +174,14 @@ func runBedrockCatcher(ctx context.Context, s *state) {
 func (bp *bedrockProxy) handleClientPacket(src net.Addr, pkt []byte) {
 	s := bp.s
 
-	// Every inbound packet is a heartbeat for the wake counter — clients
-	// that already cached the server-list entry may skip pings entirely
-	// and go straight to Open Connection Request 1, so we cannot rely on
-	// the ping path alone for waking.
-	s.signalWake()
+	// Wake only on RakNet packets a Bedrock client sends before connecting.
+	// Clients that already cached the server-list entry may skip pings and
+	// go straight to Open Connection Request 1, so both count. Anything else
+	// (scanners, stray datagrams) is ignored; once players are online the
+	// probe keeps the server up through minecraft_players_online.
+	if isUnconnectedPing(pkt) || isOpenConnectionRequest1(pkt) {
+		s.signalWake()
+	}
 
 	// Track pings separately for diagnostics.
 	if isUnconnectedPing(pkt) {
@@ -377,6 +384,14 @@ func isUnconnectedPing(pkt []byte) bool {
 		return false
 	}
 	return bytesEqual(pkt[9:9+16], raknetMagic)
+}
+
+// isOpenConnectionRequest1 matches id(1)=0x05 | magic(16) | protocol(1) | MTU padding.
+func isOpenConnectionRequest1(pkt []byte) bool {
+	if len(pkt) < raknetMinOCR1Len || pkt[0] != raknetIDOpenConnectionReq1 {
+		return false
+	}
+	return bytesEqual(pkt[1:1+16], raknetMagic)
 }
 
 // buildUnconnectedPong constructs the wire-format Pong:

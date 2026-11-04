@@ -40,8 +40,10 @@ type handshake struct {
 
 // handleSleepingClient services a client that connected while the upstream is
 // down. It reads the handshake, then either fakes a status response or sends
-// a friendly disconnect, depending on the client's intent.
-func handleSleepingClient(conn net.Conn, cfg config) error {
+// a friendly disconnect, depending on the client's intent. wake is called only
+// once a valid status/login handshake arrives, so bare TCP connects (load
+// balancer health checks, port scanners) never wake the server.
+func handleSleepingClient(conn net.Conn, cfg config, wake func()) error {
 	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
 	br := bufio.NewReader(conn)
 
@@ -51,8 +53,10 @@ func handleSleepingClient(conn net.Conn, cfg config) error {
 	}
 	switch hs.NextState {
 	case nextStateStatus:
+		wake()
 		return handleSleepingStatus(br, conn, cfg)
 	case nextStateLogin:
+		wake()
 		return handleSleepingLogin(br, conn, cfg)
 	default:
 		return fmt.Errorf("unsupported next state %d", hs.NextState)
