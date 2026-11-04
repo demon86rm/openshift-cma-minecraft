@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Scale to Zero with the Custom Metrics Autoscaler :: Scale to Zero with the Custom Metrics Autoscaler</title>
+    <link rel="canonical" href="https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/00-setup.html">
+    <link rel="prev" href="index.html">
+    <link rel="next" href="01-minecraft-server.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://csa-rh.github.io/openshift-cma-minecraft">Scale to Zero with the Custom Metrics Autoscaler</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="cma-minecraft" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#login-cluster">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#install-cma">Install the Custom Metrics Autoscaler</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#clone-repo">Clone the Repository</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-minecraft-server.html">Step 1: Minecraft Server</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#create-project">Create the Project</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#storage">Secrets and Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#seed-world">Seed the Workshop World</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#deploy-server">Deploy the Server</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-waker.html">Step 2: The Waker</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#build-waker">Build the Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#deploy-waker">Deploy the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#expose-players">Expose It to Players</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#read-metric">Read the Metric</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scale-to-zero.html">Step 3: Scale to Zero</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#apply-scaledobject">Apply the ScaledObject</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#watch-zero">Watch It Reach Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#knock">Knock on the Door</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#wake-up">Watch the Wake-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#join">Join the Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#the-end">The Finale</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#back-to-zero">Back to Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-prometheus-variant.html">Step 5: Prometheus Trigger (Optional)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#trigger-auth">Trigger Authentication</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#servicemonitor">Scrape the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#swap-trigger">Swap the Trigger</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Scale to Zero with the Custom Metrics Autoscaler</a></li>
+    <li><a href="00-setup.html">Cluster Setup</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/CSA-RH/openshift-cma-minecraft/edit/main/workshop/documentation/modules/ROOT/pages/00-setup.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Scale to Zero with the Custom Metrics Autoscaler</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page prepares the facilitator&#8217;s laptop and the cluster: one <code>oc</code> context, the Custom
+Metrics Autoscaler Operator with its <code>KedaController</code>, the workshop variables, and a local clone
+of the repository. Everything after this page runs from the repository root.</p>
+</div>
+<div class="paragraph">
+<p>Two paths are available:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Option A</strong> - fresh cluster: install the Custom Metrics Autoscaler yourself.</p>
+</li>
+<li>
+<p><strong>Option B</strong> - CMA already installed by a cluster admin: log in, verify, and move on.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="prerequisites"><a class="anchor" href="#prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Requirement</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.21+, with a default StorageClass (two 1Gi <code>ReadWriteOnce</code> PVCs)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Permissions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cluster-admin</code> for Option A (operator install and cluster-scoped <code>KedaController</code>); project admin is enough for Steps 1-4 once CMA exists</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>oc</code> CLI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Matching the cluster version</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>envsubst</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ships with <code>gettext</code> (<code>brew install gettext</code> on macOS)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>curl</code> and <code>sha256sum</code> or <code>shasum</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Download and verify the workshop world</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minecraft: Java Edition</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Version 1.21.11, with a valid account (the server runs in online mode)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Network</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The client must reach a cluster node on the NodePort assigned in Step 2</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The NodePort is reachable from a laptop only if the nodes are. On many cloud and managed
+clusters (ROSA, ARO) worker nodes sit in private subnets: check this before the session, or plan
+a jump host or a load balancer in front of the NodePort.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="login-cluster"><a class="anchor" href="#login-cluster"></a>Log In to the Cluster</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_create_the_cma_context"><a class="anchor" href="#_1_create_the_cma_context"></a>1. Create the <code>cma</code> context</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Log in once and rename the generated context to <code>cma</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Every command in this workshop passes <code>--context cma</code>, so the steps keep working even if you switch clusters in between.</p>
+</div>
+<div class="paragraph">
+<p>Put the login in a personal, gitignored <code>myenv.sh</code> so you can rerun it before the session:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat &gt; myenv.sh &lt;&lt;'ENV'
+# Console: <a href="https://console-openshift-console.apps.&lt;cluster-domain&gt" class="bare">https://console-openshift-console.apps.&lt;cluster-domain&gt</a>;
+
+# -- Workshop variables (used by envsubst in the manifests) --
+export NAMESPACE="minecraft"
+export CLUSTER_API_URL="https://api.&lt;cluster-domain&gt;:6443"
+
+# -- Context cleanup (idempotent) --
+oc config delete-context cma 2&gt;/dev/null
+
+# -- Login + rename context --
+oc login "$CLUSTER_API_URL" --username &lt;user&gt; --password &lt;password&gt;
+oc config rename-context "$(oc config current-context)" cma
+ENV
+source myenv.sh</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the context exists and works</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">&lt;user&gt;</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="install-cma"><a class="anchor" href="#install-cma"></a>Install the Custom Metrics Autoscaler</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_2_install_the_operator_option_a"><a class="anchor" href="#_2_install_the_operator_option_a"></a>2. Install the operator (Option A)</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (estimate)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Subscribe to the Custom Metrics Autoscaler Operator from the <code>redhat-operators</code> catalog.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> CMA is the Red Hat build of KEDA: it adds the <code>ScaledObject</code> API and the scale-to-zero logic the stock HorizontalPodAutoscaler lacks.</p>
+</div>
+<div class="paragraph">
+<p>Skip this sub-step for Option B.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat &lt;&lt;'EOF2' | oc apply --context cma -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-keda
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-keda
+  namespace: openshift-keda
+spec: {}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-custom-metrics-autoscaler-operator
+  namespace: openshift-keda
+spec:
+  channel: stable
+  name: openshift-custom-metrics-autoscaler-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF2</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the operator CSV succeeded</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get csv -n openshift-keda --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                                DISPLAY                     VERSION   PHASE
+custom-metrics-autoscaler.v2.19.0   Custom Metrics Autoscaler   2.19.0    Succeeded</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_3_create_the_kedacontroller_option_a"><a class="anchor" href="#_3_create_the_kedacontroller_option_a"></a>3. Create the <code>KedaController</code> (Option A)</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (estimate)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Apply <code>manifests/keda/kedacontroller.yaml</code> once per cluster.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The operator does nothing until a <code>KedaController</code> named <code>keda</code> exists in <code>openshift-keda</code>; it starts the KEDA operator, the metrics API server, and the admission webhooks.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f manifests/keda/kedacontroller.yaml --context cma</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>watchNamespace: ''</code> makes KEDA watch every namespace. The <code>KedaController</code> is
+cluster-scoped and shared: do not delete it in a reset if other teams use CMA.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: the KEDA pods are running (Option A and Option B)</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get kedacontroller,pods -n openshift-keda --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                                AGE
+kedacontroller.keda.sh/keda         2m
+
+NAME                                                  READY   STATUS    RESTARTS   AGE
+pod/custom-metrics-autoscaler-operator-...            1/1     Running   0          3m
+pod/keda-admission-...                                1/1     Running   0          2m
+pod/keda-metrics-apiserver-...                        1/1     Running   0          2m
+pod/keda-operator-...                                 1/1     Running   0          2m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="export-variables"><a class="anchor" href="#export-variables"></a>Export Workshop Variables</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_4_export_the_variables"><a class="anchor" href="#_4_export_the_variables"></a>4. Export the variables</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Export <code>NAMESPACE</code> in every shell you use for the workshop (<code>source myenv.sh</code> does it).</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The manifests contain <code>${NAMESPACE}</code> placeholders that <code>envsubst</code> fills in before <code>oc apply</code>.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export NAMESPACE=minecraft</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 22.2222%;">
+<col style="width: 33.3333%;">
+<col style="width: 44.4445%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Variable</th>
+<th class="tableblock halign-left valign-top">Used in</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NAMESPACE</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>manifests/waker/mc-waker.yaml</code>, <code>manifests/keda/*.yaml</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Project that hosts the server, the waker and the ScaledObject</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>CLUSTER_API_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API endpoint used by <code>oc login</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NODE_IP</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Address of a node the Minecraft client can reach (set in Step 2)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NODE_PORT</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Port of the <code>mc-ragnarok-nodeport</code> Service (set in Step 2)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WAKER_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Steps 3-4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTPS Route to the waker API (set in Step 2)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Always apply the manifests with <code>envsubst '$NAMESPACE' &lt; file.yaml | oc apply &#8230;&#8203;</code>.
+A plain <code>oc apply -f</code> would send the literal string <code>${NAMESPACE}</code> to the cluster, and a plain
+<code>envsubst</code> without the argument would blank any other <code>${...}</code> token.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: the variable is set</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">echo "$NAMESPACE"</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">minecraft</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="clone-repo"><a class="anchor" href="#clone-repo"></a>Clone the Repository</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_5_clone_and_enter_the_repository"><a class="anchor" href="#_5_clone_and_enter_the_repository"></a>5. Clone and enter the repository</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Clone the workshop repository and work from its root.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Every step applies files from <code>manifests/</code>, <code>scripts/</code> and <code>build/</code> by relative path.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">git clone https://github.com/CSA-RH/openshift-cma-minecraft.git
+cd openshift-cma-minecraft</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: you are at the repository root</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">ls</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">LICENSE  README.md  build  docs  manifests  scripts  workshop</code></pre>
+</div>
+</div>
+</div>
+</details>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<code>scripts/bootstrap.sh</code> installs everything in Steps 1-3 in one go. Use it to rehearse or to
+recover quickly during a live session; the steps below do the same thing by hand so the audience
+can see each piece.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="index.html">Overview</a></span>
+  <span class="next"><a href="01-minecraft-server.html">Step 1: Minecraft Server</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

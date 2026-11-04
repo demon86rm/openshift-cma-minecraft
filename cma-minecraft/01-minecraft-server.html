@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Scale to Zero with the Custom Metrics Autoscaler :: Scale to Zero with the Custom Metrics Autoscaler</title>
+    <link rel="canonical" href="https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/01-minecraft-server.html">
+    <link rel="prev" href="00-setup.html">
+    <link rel="next" href="02-waker.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://csa-rh.github.io/openshift-cma-minecraft">Scale to Zero with the Custom Metrics Autoscaler</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="cma-minecraft" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-cluster">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-cma">Install the Custom Metrics Autoscaler</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-minecraft-server.html">Step 1: Minecraft Server</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#create-project">Create the Project</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#storage">Secrets and Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#seed-world">Seed the Workshop World</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#deploy-server">Deploy the Server</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-waker.html">Step 2: The Waker</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#build-waker">Build the Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#deploy-waker">Deploy the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#expose-players">Expose It to Players</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#read-metric">Read the Metric</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scale-to-zero.html">Step 3: Scale to Zero</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#apply-scaledobject">Apply the ScaledObject</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#watch-zero">Watch It Reach Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#knock">Knock on the Door</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#wake-up">Watch the Wake-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#join">Join the Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#the-end">The Finale</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#back-to-zero">Back to Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-prometheus-variant.html">Step 5: Prometheus Trigger (Optional)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#trigger-auth">Trigger Authentication</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#servicemonitor">Scrape the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#swap-trigger">Swap the Trigger</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Scale to Zero with the Custom Metrics Autoscaler</a></li>
+    <li><a href="01-minecraft-server.html">Step 1: Minecraft Server</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/CSA-RH/openshift-cma-minecraft/edit/main/workshop/documentation/modules/ROOT/pages/01-minecraft-server.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Scale to Zero with the Custom Metrics Autoscaler</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This step deploys the Minecraft server the classic way: one replica, always running, with the
+workshop world preloaded on its volume. It works, but it burns CPU and memory around the clock
+even when nobody plays. The following steps remove that waste without changing the server
+itself.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>CMA installed and the <code>cma</code> context created, as described in <a href="00-setup.html" class="xref page">Cluster Setup</a></p>
+</li>
+<li>
+<p><code>NAMESPACE</code> exported in your shell</p>
+</li>
+<li>
+<p><code>oc</code> CLI authenticated with rights to create a project</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The server images (<code>docker.io/itzg/minecraft-server</code> and <code>docker.io/itzg/minecraft-bedrock-server</code>)
+come from Docker Hub: there is no Red Hat build of a Minecraft server. The pod also runs a Bedrock
+container on UDP 19132; this workshop focuses on the Java path, Bedrock follows the same pattern.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>mc-ragnarok</code> is a Deployment with <code>replicas: 1</code> and the <code>Recreate</code> strategy: the <code>ReadWriteOnce</code> world volume can only be mounted by one pod at a time.</p>
+</li>
+<li>
+<p>The world (<code>ragnarok</code>, with a large "THE END" structure built for the finale) is extracted into the <code>mc-ragnarok-datadir</code> PVC <strong>before</strong> the server first boots; otherwise the server would generate a fresh world.</p>
+</li>
+<li>
+<p>The ClusterIP Service <code>mc-ragnarok</code> is internal only. Players will never connect to it directly: from Step 2 they reach the waker instead.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="create-project"><a class="anchor" href="#create-project"></a>1. Create the project</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create the project that hosts the whole workshop.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Every namespaced object (server, waker, ScaledObject) lives here, so a reset is a single project delete if needed.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc new-project "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the project exists</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get project "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME        DISPLAY NAME   STATUS
+minecraft                  Active</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="storage"><a class="anchor" href="#storage"></a>2. Create the secrets and the volumes</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Apply the two Secrets and the two PersistentVolumeClaims.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The Deployment references them; the Java world PVC must exist before we can seed it.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">for f in mc-ragnarok-rcon-secret mc-ragnarok-curseforge-secret mc-ragnarok-pvc; do
+  envsubst '$NAMESPACE' &lt; manifests/minecraft/$f.yaml | oc apply -n "$NAMESPACE" --context cma -f -
+done</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Both Secrets ship with a <code>CHANGEME!</code> placeholder. The server runs <code>TYPE: VANILLA</code>, so the
+CurseForge key is not used; RCON is disabled.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: the PVCs exist</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pvc -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                          STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mc-ragnarok-bedrock-datadir   Pending                                      gp3-csi        10s
+mc-ragnarok-datadir           Pending                                      gp3-csi        10s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>Pending</code> is expected with a <code>WaitForFirstConsumer</code> StorageClass: the volume is bound when the
+first pod mounts it.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="seed-world"><a class="anchor" href="#seed-world"></a>3. Seed the workshop world</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (estimate: download ~10 s, helper pod ~30 s, extraction ~10 s)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Download the world archive from the <code>world-v1</code> release, verify it, and extract it into the PVC through a short-lived helper pod.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The server must find <code>/data/ragnarok/level.dat</code> on its very first boot, or it generates a new world without the finale structure.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -fsSL --create-dirs -o mc-data/mc-ragnarok-data.tar.gz https://github.com/CSA-RH/openshift-cma-minecraft/releases/download/world-v1/mc-ragnarok-data.tar.gz
+echo "0d49a056aab00b774608618b42eca2c2887885ad3e747f9189af001ffb64ad6d  mc-data/mc-ragnarok-data.tar.gz" | shasum -a 256 -c -</code></pre>
+</div>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cat &lt;&lt;'EOF2' | oc apply -n "$NAMESPACE" --context cma -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mc-ragnarok-seed
+  labels:
+    app.kubernetes.io/part-of: mc-ragnarok
+spec:
+  restartPolicy: Never
+  containers:
+    - name: seed
+      image: docker.io/itzg/minecraft-server:latest
+      command: ["bash", "-c", "exec sleep 1200"]
+      volumeMounts:
+        - { mountPath: /data, name: datadir }
+  volumes:
+    - name: datadir
+      persistentVolumeClaim:
+        claimName: mc-ragnarok-datadir
+EOF2
+oc wait --for=condition=Ready pod/mc-ragnarok-seed -n "$NAMESPACE" --context cma --timeout=300s
+oc exec -i mc-ragnarok-seed -n "$NAMESPACE" --context cma -- bash -c \
+  "mkdir -p /data/ragnarok &amp;&amp; tar xzf - -C /data/ragnarok &amp;&amp; chmod -R g+rwX /data/ragnarok" \
+  &lt; mc-data/mc-ragnarok-data.tar.gz</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the world is on the volume</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc exec mc-ragnarok-seed -n "$NAMESPACE" --context cma -- ls /data/ragnarok/level.dat</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">/data/ragnarok/level.dat</code></pre>
+</div>
+</div>
+</div>
+</details>
+<div class="paragraph">
+<p>Release the volume before the server starts (the PVC is <code>ReadWriteOnce</code>):</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete pod mc-ragnarok-seed -n "$NAMESPACE" --context cma --wait</code></pre>
+</div>
+</div>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="deploy-server"><a class="anchor" href="#deploy-server"></a>4. Deploy the server</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1-2 minutes (estimate: image pull, then at least 30 s before the first readiness check)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Apply the Deployment and the internal ClusterIP Services, then wait for the rollout.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the workload we will later scale between zero and one replica.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">for f in mc-ragnarok-deploy mc-ragnarok-svc; do
+  envsubst '$NAMESPACE' &lt; manifests/minecraft/$f.yaml | oc apply -n "$NAMESPACE" --context cma -f -
+done
+oc rollout status deploy/mc-ragnarok -n "$NAMESPACE" --context cma --timeout=300s</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Do not apply <code>manifests/minecraft/mc-ragnarok-np.yaml</code> yet. That NodePort Service
+selects the <strong>waker</strong> pod, which does not exist until Step 2.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The readiness and liveness probes run <code>mc-health</code> with <code>initialDelaySeconds: 30</code> and up to
+20 failures 5 s apart, so a slow first boot has roughly two minutes before the container is
+restarted.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: the server is ready</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get deploy mc-ragnarok -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok   1/1     1            1           2m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Optional: reach it from your laptop and connect a client to <code>localhost:25565</code>.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc port-forward svc/mc-ragnarok 25565:25565 -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_no_deployment"><a class="anchor" href="#_what_this_solves_compared_to_no_deployment"></a>What This Solves (Compared to No Deployment)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem</th>
+<th class="tableblock halign-left valign-top">How This Step Solves It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No server</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Minecraft server runs on OpenShift with a persistent, preloaded world</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Players have no stable entry point that survives the server being down</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="02-waker.html" class="xref page">Step 2</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The server runs (and costs) 24/7, even with nobody online</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="03-scale-to-zero.html" class="xref page">Step 3</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/storage/understanding-persistent-storage">Understanding persistent storage</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Seed with a helper pod (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simple and explicit; needs the Deployment to be stopped because the PVC is <code>ReadWriteOnce</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Init container that downloads the world</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Runs on every start, needs network access from the pod, and must be made idempotent</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Let the server generate a world</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No setup at all, but no finale structure</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Delete the server first, then its storage: the PVC cannot be released while a pod mounts it.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Deleting the PVC deletes the seeded world. Repeat sub-step 3 afterwards.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f manifests/minecraft/mc-ragnarok-svc.yaml -n "$NAMESPACE" --context cma --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-deploy.yaml -n "$NAMESPACE" --context cma --ignore-not-found --wait
+oc delete pod mc-ragnarok-seed -n "$NAMESPACE" --context cma --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-pvc.yaml -n "$NAMESPACE" --context cma --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-curseforge-secret.yaml -n "$NAMESPACE" --context cma --ignore-not-found
+oc delete -f manifests/minecraft/mc-ragnarok-rcon-secret.yaml -n "$NAMESPACE" --context cma --ignore-not-found
+oc delete project "$NAMESPACE" --context cma --ignore-not-found</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="00-setup.html">Cluster Setup</a></span>
+  <span class="next"><a href="02-waker.html">Step 2: The Waker</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

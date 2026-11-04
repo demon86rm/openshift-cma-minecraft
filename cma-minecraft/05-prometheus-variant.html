@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Scale to Zero with the Custom Metrics Autoscaler :: Scale to Zero with the Custom Metrics Autoscaler</title>
+    <link rel="canonical" href="https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/05-prometheus-variant.html">
+    <link rel="prev" href="04-scale-from-zero.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://csa-rh.github.io/openshift-cma-minecraft">Scale to Zero with the Custom Metrics Autoscaler</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="cma-minecraft" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-cluster">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-cma">Install the Custom Metrics Autoscaler</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-minecraft-server.html">Step 1: Minecraft Server</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#create-project">Create the Project</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#storage">Secrets and Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#seed-world">Seed the Workshop World</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#deploy-server">Deploy the Server</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-waker.html">Step 2: The Waker</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#build-waker">Build the Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#deploy-waker">Deploy the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#expose-players">Expose It to Players</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#read-metric">Read the Metric</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scale-to-zero.html">Step 3: Scale to Zero</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#apply-scaledobject">Apply the ScaledObject</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#watch-zero">Watch It Reach Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#knock">Knock on the Door</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#wake-up">Watch the Wake-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#join">Join the Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#the-end">The Finale</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#back-to-zero">Back to Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-prometheus-variant.html">Step 5: Prometheus Trigger (Optional)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#trigger-auth">Trigger Authentication</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#servicemonitor">Scrape the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#swap-trigger">Swap the Trigger</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Scale to Zero with the Custom Metrics Autoscaler</a></li>
+    <li><a href="05-prometheus-variant.html">Step 5: Prometheus Trigger (Optional)</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/CSA-RH/openshift-cma-minecraft/edit/main/workshop/documentation/modules/ROOT/pages/05-prometheus-variant.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Scale to Zero with the Custom Metrics Autoscaler</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Step 3 lets CMA poll the waker directly. Many platform teams prefer every scaling signal to go
+through cluster monitoring, where it is stored, graphed and alerted on. This optional step swaps
+the trigger for a <code>prometheus</code> trigger that reads <code>minecraft_desired_replicas</code> from the OpenShift
+User Workload Monitoring stack through Thanos Querier. Behaviour does not change; only the path
+of the metric does.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="03-scale-to-zero.html" class="xref page">Step 3</a> completed</p>
+</li>
+<li>
+<p>User Workload Monitoring enabled on the cluster (cluster admin)</p>
+</li>
+<li>
+<p>Rights to grant the <code>cluster-monitoring-view</code> cluster role</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>A ServiceMonitor tells Prometheus to scrape the waker&#8217;s <code>/metrics</code> every 15 s.</p>
+</li>
+<li>
+<p>A ServiceAccount with <code>cluster-monitoring-view</code> gets a token; the token and the cluster CA go into the Secret <code>keda-prometheus-token</code>.</p>
+</li>
+<li>
+<p>A <code>TriggerAuthentication</code> hands token and CA to KEDA.</p>
+</li>
+<li>
+<p>The new ScaledObject queries <code>max(minecraft_desired_replicas{namespace="$NAMESPACE", service="mc-ragnarok-waker"})</code> on Thanos Querier. It has the same name as the Step 3 one, so applying it replaces it.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="trigger-auth"><a class="anchor" href="#trigger-auth"></a>1. Create the credentials for KEDA</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Run <code>scripts/setup-trigger-auth.sh</code> to create the ServiceAccount, role binding and token Secret.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Thanos Querier requires an authenticated bearer token; the metrics-api trigger needed nothing.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The script uses the <strong>current</strong> <code>oc</code> context, not <code>--context</code>. Switch to it first.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc config use-context cma
+./scripts/setup-trigger-auth.sh "$NAMESPACE"</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the Secret exists</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get secret keda-prometheus-token -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                    TYPE     DATA   AGE
+keda-prometheus-token   Opaque   2      10s</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="servicemonitor"><a class="anchor" href="#servicemonitor"></a>2. Scrape the waker</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~30 seconds (estimate: first scrapes after the ServiceMonitor is picked up)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Apply the ServiceMonitor for the waker.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Without it the metric never reaches Prometheus and the trigger would only see empty results.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">envsubst '$NAMESPACE' &lt; manifests/waker/servicemonitor.yaml | oc apply -n "$NAMESPACE" --context cma -f -</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the metric is queryable</summary>
+<div class="content">
+<div class="paragraph">
+<p>In the web console, open <strong>Observe &gt; Metrics</strong>, select the <code>$NAMESPACE</code> project and run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-promql hljs" data-lang="promql">minecraft_desired_replicas</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One series, value <code>0</code> or <code>1</code>.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="swap-trigger"><a class="anchor" href="#swap-trigger"></a>3. Swap the trigger</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Apply the Prometheus ScaledObject and its TriggerAuthentication.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This replaces the metrics-api trigger in place; the Deployment keeps its current replica count.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">envsubst '$NAMESPACE' &lt; manifests/keda/scaledobject-prometheus.yaml | oc apply -n "$NAMESPACE" --context cma -f -</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the ScaledObject now uses the prometheus trigger</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context cma -o jsonpath='{.spec.triggers[0].type}{"\n"}'
+oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">prometheus
+NAME          SCALETARGETKIND      SCALETARGETNAME   MIN   MAX   READY   ACTIVE   ...
+mc-ragnarok   apps/v1.Deployment   mc-ragnarok       0     1     True    False    ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Repeat <a href="04-scale-from-zero.html" class="xref page">Step 4</a>: the demo behaves the same.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_step_3"><a class="anchor" href="#_what_this_solves_compared_to_step_3"></a>What This Solves (Compared to Step 3)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from Step 3</th>
+<th class="tableblock halign-left valign-top">How This Step Solves It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The scaling signal is invisible to cluster monitoring</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric is stored in Prometheus, so it can be graphed and alerted on</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A one-year token in a Secret must be rotated</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Outside the workshop: rotate it, or use a shorter <code>--duration</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/nodes/automatically-scaling-pods-with-the-custom-metrics-autoscaler-operator#nodes-cma-autoscaling-custom-trigger-prom_nodes-cma-autoscaling-custom-trigger">Understanding the Prometheus trigger</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/nodes/automatically-scaling-pods-with-the-custom-metrics-autoscaler-operator#nodes-cma-autoscaling-custom-trigger-auth">Understanding custom metrics autoscaler trigger authentications</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/monitoring_stack_for_red_hat_openshift/4.21/html/configuring_user_workload_monitoring/preparing-to-configure-the-monitoring-stack-uwm">Preparing to configure the user workload monitoring stack</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>prometheus</code> trigger through Thanos Querier (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Signal stored and visible; needs credentials and adds one scrape interval of delay</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>metrics-api</code> trigger (Step 3)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simplest and fastest; the signal is not recorded anywhere</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Put the metrics-api trigger back first, so the server is never without a ScaledObject, then
+remove the monitoring pieces.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">envsubst '$NAMESPACE' &lt; manifests/keda/scaledobject-metricsapi.yaml | oc apply -n "$NAMESPACE" --context cma -f -
+oc delete triggerauthentication keda-prometheus-uwm -n "$NAMESPACE" --context cma --ignore-not-found
+oc delete -f manifests/waker/servicemonitor.yaml -n "$NAMESPACE" --context cma --ignore-not-found
+oc delete secret keda-prometheus-token -n "$NAMESPACE" --context cma --ignore-not-found
+oc adm policy remove-cluster-role-from-user cluster-monitoring-view -z thanos-reader -n "$NAMESPACE" --context cma
+oc delete sa thanos-reader -n "$NAMESPACE" --context cma --ignore-not-found</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

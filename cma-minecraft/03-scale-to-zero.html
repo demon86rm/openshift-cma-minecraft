@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Scale to Zero with the Custom Metrics Autoscaler :: Scale to Zero with the Custom Metrics Autoscaler</title>
+    <link rel="canonical" href="https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/03-scale-to-zero.html">
+    <link rel="prev" href="02-waker.html">
+    <link rel="next" href="04-scale-from-zero.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://csa-rh.github.io/openshift-cma-minecraft">Scale to Zero with the Custom Metrics Autoscaler</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="cma-minecraft" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-cluster">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-cma">Install the Custom Metrics Autoscaler</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-minecraft-server.html">Step 1: Minecraft Server</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#create-project">Create the Project</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#storage">Secrets and Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#seed-world">Seed the Workshop World</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#deploy-server">Deploy the Server</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-waker.html">Step 2: The Waker</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#build-waker">Build the Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#deploy-waker">Deploy the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#expose-players">Expose It to Players</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#read-metric">Read the Metric</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scale-to-zero.html">Step 3: Scale to Zero</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#apply-scaledobject">Apply the ScaledObject</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#watch-zero">Watch It Reach Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#knock">Knock on the Door</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#wake-up">Watch the Wake-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#join">Join the Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#the-end">The Finale</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-scale-from-zero.html#back-to-zero">Back to Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-prometheus-variant.html">Step 5: Prometheus Trigger (Optional)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#trigger-auth">Trigger Authentication</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#servicemonitor">Scrape the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#swap-trigger">Swap the Trigger</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Scale to Zero with the Custom Metrics Autoscaler</a></li>
+    <li><a href="03-scale-to-zero.html">Step 3: Scale to Zero</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/CSA-RH/openshift-cma-minecraft/edit/main/workshop/documentation/modules/ROOT/pages/03-scale-to-zero.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Scale to Zero with the Custom Metrics Autoscaler</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The waker already knows when the server is needed. This step tells CMA to act on it: a
+<code>ScaledObject</code> polls the waker&#8217;s <code>/scaler</code> endpoint and scales <code>mc-ragnarok</code> between zero and
+one replica. With nobody online, the server goes to sleep about a minute later.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>The waker from <a href="02-waker.html" class="xref page">Step 2</a> running and reachable on its ClusterIP Service</p>
+</li>
+<li>
+<p>CMA and the <code>KedaController</code> from <a href="00-setup.html#install-cma" class="xref page">Cluster Setup</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How It Works</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>manifests/keda/scaledobject-metricsapi.yaml</code> uses the <code>metrics-api</code> trigger:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Value</th>
+<th class="tableblock halign-left valign-top">Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>url</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><a href="http://mc-ragnarok-waker.$NAMESPACE.svc.cluster.local:8080/scaler" class="bare">http://mc-ragnarok-waker.$NAMESPACE.svc.cluster.local:8080/scaler</a></code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Endpoint polled by KEDA</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>valueLocation</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>value</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JSON field read from the response</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>pollingInterval</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>15</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Seconds between polls</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>activationTargetValue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Above 0 the ScaledObject is <strong>active</strong> and scales from zero; at 0 it may go to zero</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>targetValue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HPA divisor: <code>ceil(1 / 1)</code> = 1 replica when active</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>minReplicaCount</code> / <code>maxReplicaCount</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0</code> / <code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale-to-zero range</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>cooldownPeriod</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>60</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Seconds at 0 before scaling to zero (raise to 600+ in production)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fallback.replicas</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">If the waker is unreachable 3 times in a row, keep the server up (fail open)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>CMA handles the 0 to 1 and 1 to 0 transitions itself and creates a HorizontalPodAutoscaler
+(<code>keda-hpa-mc-ragnarok</code>) for anything above one replica.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="apply-scaledobject"><a class="anchor" href="#apply-scaledobject"></a>1. Apply the ScaledObject</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create the <code>mc-ragnarok</code> ScaledObject with the metrics-api trigger.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the only object that connects the waker&#8217;s metric to the Deployment&#8217;s replica count.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">envsubst '$NAMESPACE' &lt; manifests/keda/scaledobject-metricsapi.yaml | oc apply -n "$NAMESPACE" --context cma -f -</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the ScaledObject is ready</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME          SCALETARGETKIND      SCALETARGETNAME   MIN   MAX   READY   ACTIVE   FALLBACK   PAUSED   AGE
+mc-ragnarok   apps/v1.Deployment   mc-ragnarok       0     1     True    False    False      False    20s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>ACTIVE=False</code> means the metric is at or below <code>activationTargetValue</code>: the server is allowed to
+go to zero.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="watch-zero"><a class="anchor" href="#watch-zero"></a>2. Watch the server reach zero</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1-2 minutes (estimate: one poll plus <code>cooldownPeriod</code> 60 s)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Watch the Deployment until it reports zero replicas.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the cost saving: no player, no server pod.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get deploy mc-ragnarok -n "$NAMESPACE" --context cma -w</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: zero replicas, waker still up</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get deploy -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok         0/0     0            0           15m
+mc-ragnarok-waker   1/1     1            1           8m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If the server does not go down, someone may have pinged it: each ping refreshes the 3 minute
+wake hold. Check <code>curl -sk "$WAKER_URL/status"</code>.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_step_2"><a class="anchor" href="#_what_this_solves_compared_to_step_2"></a>What This Solves (Compared to Step 2)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from Step 2</th>
+<th class="tableblock halign-left valign-top">How This Step Solves It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The server runs 24/7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CMA scales it to zero once the metric has been 0 for <code>cooldownPeriod</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">We have not yet seen a player bring it back</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="04-scale-from-zero.html" class="xref page">Step 4</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The trigger polls the waker directly; some teams prefer to go through cluster monitoring</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="05-prometheus-variant.html" class="xref page">Step 5</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/nodes/automatically-scaling-pods-with-the-custom-metrics-autoscaler-operator#nodes-cma-autoscaling-custom-overview-trigger">Understanding custom metrics autoscaler triggers</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/nodes/automatically-scaling-pods-with-the-custom-metrics-autoscaler-operator#nodes-cma-autoscaling-custom-pausing">Pausing the custom metrics autoscaler for a scaled object</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>metrics-api</code> trigger (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No dependency besides the waker; no credentials</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>prometheus</code> trigger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same metric through User Workload Monitoring; needs a TriggerAuthentication (Step 5)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Plain HorizontalPodAutoscaler</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cannot scale to zero and cannot read an external 0/1 signal without a custom metrics adapter</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Delete the ScaledObject, then scale the server back up: deleting the ScaledObject leaves the
+Deployment at whatever replica count it had, possibly zero.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc delete -f manifests/keda/scaledobject-metricsapi.yaml -n "$NAMESPACE" --context cma --ignore-not-found --wait
+oc scale deploy/mc-ragnarok --replicas=1 -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="02-waker.html">Step 2: The Waker</a></span>
+  <span class="next"><a href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

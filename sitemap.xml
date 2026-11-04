@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/00-setup.html</loc>
+<lastmod>2026-11-04T08:51:48.224Z</lastmod>
+</url>
+<url>
+<loc>https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/01-minecraft-server.html</loc>
+<lastmod>2026-11-04T08:51:48.224Z</lastmod>
+</url>
+<url>
+<loc>https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/02-waker.html</loc>
+<lastmod>2026-11-04T08:51:48.224Z</lastmod>
+</url>
+<url>
+<loc>https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/03-scale-to-zero.html</loc>
+<lastmod>2026-11-04T08:51:48.224Z</lastmod>
+</url>
+<url>
+<loc>https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/04-scale-from-zero.html</loc>
+<lastmod>2026-11-04T08:51:48.224Z</lastmod>
+</url>
+<url>
+<loc>https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/05-prometheus-variant.html</loc>
+<lastmod>2026-11-04T08:51:48.224Z</lastmod>
+</url>
+<url>
+<loc>https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/index.html</loc>
+<lastmod>2026-11-04T08:51:48.224Z</lastmod>
+</url>
+</urlset>

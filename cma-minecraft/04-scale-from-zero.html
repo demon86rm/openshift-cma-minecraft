@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Scale to Zero with the Custom Metrics Autoscaler :: Scale to Zero with the Custom Metrics Autoscaler</title>
+    <link rel="canonical" href="https://csa-rh.github.io/openshift-cma-minecraft/cma-minecraft/04-scale-from-zero.html">
+    <link rel="prev" href="03-scale-to-zero.html">
+    <link rel="next" href="05-prometheus-variant.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://csa-rh.github.io/openshift-cma-minecraft">Scale to Zero with the Custom Metrics Autoscaler</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="cma-minecraft" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-cluster">Log In to the Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-cma">Install the Custom Metrics Autoscaler</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#clone-repo">Clone the Repository</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-minecraft-server.html">Step 1: Minecraft Server</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#create-project">Create the Project</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#storage">Secrets and Storage</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#seed-world">Seed the Workshop World</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-minecraft-server.html#deploy-server">Deploy the Server</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-waker.html">Step 2: The Waker</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#build-waker">Build the Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#deploy-waker">Deploy the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#expose-players">Expose It to Players</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-waker.html#read-metric">Read the Metric</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-scale-to-zero.html">Step 3: Scale to Zero</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#apply-scaledobject">Apply the ScaledObject</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-scale-to-zero.html#watch-zero">Watch It Reach Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#knock">Knock on the Door</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#wake-up">Watch the Wake-Up</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#join">Join the Server</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#the-end">The Finale</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#back-to-zero">Back to Zero</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-prometheus-variant.html">Step 5: Prometheus Trigger (Optional)</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#trigger-auth">Trigger Authentication</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#servicemonitor">Scrape the Waker</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-prometheus-variant.html#swap-trigger">Swap the Trigger</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Scale to Zero with the Custom Metrics Autoscaler</a></li>
+    <li><a href="04-scale-from-zero.html">Step 4: Scale from Zero (Demo)</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/CSA-RH/openshift-cma-minecraft/edit/main/workshop/documentation/modules/ROOT/pages/04-scale-from-zero.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Scale to Zero with the Custom Metrics Autoscaler</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is the moment the workshop builds up to. The server is at zero replicas; a player opens
+Minecraft and adds the server. The waker answers, raises the metric, CMA scales the server to one
+replica, and a short while later the player walks into the workshop world to find the finale.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/04-scale-from-zero-sequence.png" alt="Sequence: the player pings mc-waker" width="the waker answers Sleeping and raises the wake signal" height="CMA polls /scaler and scales mc-ragnarok from 0 to 1">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>The ScaledObject from <a href="03-scale-to-zero.html" class="xref page">Step 3</a> in place and <code>mc-ragnarok</code> at <code>0/0</code></p>
+</li>
+<li>
+<p><code>NODE_IP</code> and <code>NODE_PORT</code> from <a href="02-waker.html#expose-players" class="xref page">Step 2</a></p>
+</li>
+<li>
+<p>Minecraft: Java Edition 1.21.11 on the presenter&#8217;s machine</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Keep two terminals visible to the audience: one running
+<code>oc get deploy mc-ragnarok -n "$NAMESPACE" --context cma -w</code>, one with the Minecraft
+client.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to Apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="knock"><a class="anchor" href="#knock"></a>1. Knock on the door</h3>
+<div class="paragraph">
+<p><strong>What:</strong> In Minecraft, open <strong>Multiplayer &gt; Add Server</strong> and enter <code>$NODE_IP:$NODE_PORT</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Refreshing the server list sends a Server List Ping; that ping reaches the waker, which is the wake-up signal.</p>
+</div>
+<div class="paragraph">
+<p>The server list shows the sleeping message instead of a live server.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The waker advertises protocol version 769 (Minecraft 1.21.4) in its sleeping status, so the
+client may flag a version mismatch next to the entry. This only affects the sleeping entry; the
+real server reports 1.21.11 once it is up.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: the wake signal is on</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk "$WAKER_URL/scaler"</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">{"value":1}</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="wake-up"><a class="anchor" href="#wake-up"></a>2. Watch the wake-up</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1-2 minutes (estimate: up to 15 s for the next poll, image start, at least 30 s to the first readiness check, up to 15 s for the waker&#8217;s next probe)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Watch CMA activate the ScaledObject and the Deployment go from 0 to 1.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is scale-from-zero driven by a metric the workload itself could not have produced.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get scaledobject mc-ragnarok -n "$NAMESPACE" --context cma
+oc get deploy mc-ragnarok -n "$NAMESPACE" --context cma -w</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the ScaledObject is active and the server ready</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME          SCALETARGETKIND      SCALETARGETNAME   MIN   MAX   READY   ACTIVE   ...
+mc-ragnarok   apps/v1.Deployment   mc-ragnarok       0     1     True    True     ...
+
+NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok   0/1     1            0           20m
+mc-ragnarok   1/1     1            1           21m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="join"><a class="anchor" href="#join"></a>3. Join the server</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Press <strong>Refresh</strong> in the server list, then join.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Once the waker&#8217;s probe sees the server up, it stops answering on the server&#8217;s behalf and proxies the connection through.</p>
+</div>
+<details>
+<summary class="title">Verify: the waker is proxying</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk "$WAKER_URL/status"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Java upstream is reported up with one player online.</p>
+</div>
+</div>
+</details>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+No Minecraft client at hand? <code>curl -skX POST "$WAKER_URL/wake"</code> raises the same wake signal.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="the-end"><a class="anchor" href="#the-end"></a>4. The finale</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Follow the guided route from the spawn point to the structure.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> A visible payoff that the world, and the volume it lives on, survived the trip to zero and back.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Only a player&#8217;s <strong>first</strong> login starts near the world spawn. Minecraft saves each
+account&#8217;s position in <code>/data/ragnarok/playerdata/&lt;UUID&gt;.dat</code> and returns the player there on the
+next login. The <code>world-v1</code> archive already contains the saved data of the account that built
+the world, and every rehearsal on the cluster adds the presenter&#8217;s own. Before the session,
+reset the presenter&#8217;s position as described in <a href="#reset-position">Reset the presenter&#8217;s position</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The route is marked in the world, so no coordinates are needed:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>From the spawn point, follow the path.</p>
+</li>
+<li>
+<p>At the end of the path, climb the ladder.</p>
+</li>
+<li>
+<p>At the top, a sign faces the player, and the giant "THE END" lettering fills the sky behind it.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Walk the route once while rehearsing, so you know how long it takes on stage.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: the audience sees "THE END"</summary>
+<div class="content">
+<div class="paragraph">
+<p>The structure is in front of the player. No screenshot here on purpose: it is the reveal.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="back-to-zero"><a class="anchor" href="#back-to-zero"></a>5. Back to zero</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~4-5 minutes (estimate: 3 minute wake hold, then <code>cooldownPeriod</code> 60 s)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Disconnect and watch the server scale back to zero.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> It closes the loop: the server only exists while someone needs it.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get deploy mc-ragnarok -n "$NAMESPACE" --context cma -w</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: the server is at zero again</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+mc-ragnarok   0/0     0            0           30m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_step_3"><a class="anchor" href="#_what_this_solves_compared_to_step_3"></a>What This Solves (Compared to Step 3)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from Step 3</th>
+<th class="tableblock halign-left valign-top">How This Step Solves It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale to zero alone would leave players locked out</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player&#8217;s connection attempt brings the server back within a couple of minutes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What This Does NOT Solve (Yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining Problem</th>
+<th class="tableblock halign-left valign-top">Addressed In</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The first player waits for the cold start</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inherent to scale to zero; trade it against cost with <code>cooldownPeriod</code> and <code>WAKER_WAKE_HOLD</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The trigger bypasses cluster monitoring</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="05-prometheus-variant.html" class="xref page">Step 5 (optional)</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official Documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html/nodes/automatically-scaling-pods-with-the-custom-metrics-autoscaler-operator">Automatically scaling pods with the Custom Metrics Autoscaler Operator</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives Considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Wake on connection attempt (this demo)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Zero idle cost; the first player sees a short "Sleeping" phase</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Keep one warm replica (<code>minReplicaCount: 1</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No cold start, but no saving either</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scheduled scaling (Cron trigger)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Good for predictable sessions; wastes resources outside them and misses unplanned players</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Nothing to undo: the demo leaves the cluster in the same state as the end of Step 3. To rerun it
+immediately without waiting for the cooldown, wait for <code>0/0</code> or delete and reapply the ScaledObject
+from <a href="03-scale-to-zero.html#apply-scaledobject" class="xref page">Step 3</a>.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get deploy mc-ragnarok -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="reset-position"><a class="anchor" href="#reset-position"></a>Reset the presenter&#8217;s position</h3>
+<div class="paragraph">
+<p>Run this after a rehearsal, while the server is still up and the presenter is <strong>disconnected</strong>:
+the server writes the player file again on logout, so deleting it during a session has no effect.
+The next login then starts at the world spawn, at the beginning of the path.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc exec deploy/mc-ragnarok -c mc-ragnarok -n "$NAMESPACE" --context cma -- \
+  ls /data/ragnarok/playerdata
+oc exec deploy/mc-ragnarok -c mc-ragnarok -n "$NAMESPACE" --context cma -- \
+  bash -c 'rm -f /data/ragnarok/playerdata/&lt;UUID&gt;.dat /data/ragnarok/playerdata/&lt;UUID&gt;.dat_old'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Replace <code>&lt;UUID&gt;</code> with the presenter&#8217;s account UUID (one file per account that has joined).
+If the server is already at zero replicas, wake it with <code>curl -skX POST "$WAKER_URL/wake"</code>
+first. To reset the whole world instead, repeat
+<a href="01-minecraft-server.html#seed-world" class="xref page">Step 1, sub-step 3</a> with the old world removed.</p>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="03-scale-to-zero.html">Step 3: Scale to Zero</a></span>
+  <span class="next"><a href="05-prometheus-variant.html">Step 5: Prometheus Trigger (Optional)</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
