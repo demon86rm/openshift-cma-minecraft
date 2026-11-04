@@ -5,7 +5,8 @@ This is the moment the workshop builds up to. The server is at zero replicas; a 
 Minecraft and adds the server. The waker answers, raises the metric, CMA scales the server to one
 replica, and a short while later the player walks into the workshop world to find the finale.
 
-image::04-scale-from-zero-sequence.png[Sequence: the player pings mc-waker, the waker answers Sleeping and raises the wake signal, CMA polls /scaler and scales mc-ragnarok from 0 to 1, the waker probes the server until it is up, then proxies the reconnecting player; after the cooldown CMA scales back to 0]
+image::04-scale-from-zero-sequence.png["Sequence: the player pings mc-waker, the waker answers Sleeping and raises the wake signal, CMA polls /scaler and scales mc-ragnarok from 0 to 1, the waker probes the server until it is up, then proxies the reconnecting player; after the cooldown CMA scales back to 0",link=_images/04-scale-from-zero-sequence.png,window=_blank]
+_Click the diagram to open it full size._
 
 == Prerequisites
 
