@@ -11,7 +11,7 @@ _Click the diagram to open it full size._
 == Prerequisites
 
 * The ScaledObject from xref:03-scale-to-zero.adoc[Step 3] in place and `mc-ragnarok` at `0/0`
-* `NODE_IP` and `NODE_PORT` from xref:02-waker.adoc#expose-players[Step 2]
+* The port-forward from xref:02-waker.adoc#expose-players[Step 2] running
 * Minecraft: Java Edition {mc-version} on the presenter's machine (optional: without it, follow the
   xref:#no-client[No Minecraft client?] path)
 
@@ -24,7 +24,7 @@ client.
 [#knock]
 === 1. Knock on the door
 
-*What:* In Minecraft, open *Multiplayer > Add Server* and enter `$NODE_IP:$NODE_PORT`.
+*What:* In Minecraft, open *Multiplayer > Add Server* and enter `localhost:25565`.
 
 *Why:* Refreshing the server list sends a Server List Ping; that ping reaches the waker, which is the wake-up signal.
 

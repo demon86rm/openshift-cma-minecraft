@@ -185,9 +185,6 @@ done
 oc rollout status deploy/mc-ragnarok -n "$NAMESPACE" --context {cma-context} --timeout=300s
 ----
 
-IMPORTANT: Do not apply `manifests/minecraft/mc-ragnarok-np.yaml` yet. That NodePort Service
-selects the *waker* pod, which does not exist until Step 2.
-
 NOTE: The readiness and liveness probes run `mc-health` with `initialDelaySeconds: 30` and up to
 20 failures 5 s apart, so a slow first boot has roughly two minutes before the container is
 restarted.

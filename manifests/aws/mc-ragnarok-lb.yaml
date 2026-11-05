@@ -1,9 +1,8 @@
 ---
 # mc-ragnarok-lb.yaml
-# AWS Network Load Balancer in front of the waker, for ROSA and other
-# OpenShift clusters on AWS whose worker nodes sit in private subnets (where
-# the NodePort in ../minecraft/mc-ragnarok-np.yaml is not reachable from a
-# laptop). The AWS cloud provider creates the NLB from this Service and
+# Optional AWS Network Load Balancer in front of the waker, for when other
+# people must connect (the default, `oc port-forward`, only serves the machine
+# that runs it). The AWS cloud provider creates the NLB from this Service and
 # deletes it when the Service is deleted.
 #
 # Not applied by scripts/bootstrap.sh. Restrict access to the players'

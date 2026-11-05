@@ -13,7 +13,7 @@ sleeps and publishes a 0/1 "please wake up" metric; CMA reads it and scales the 
 Deployment from zero to one and back. The facilitator runs every step; the audience joins the
 server at the end.
 
-image::architecture.png["Architecture: players reach mc-waker through a NodePort Service; CMA reads the waker metric and scales the mc-ragnarok Deployment between 0 and 1",link=_images/architecture.png,window=_blank]
+image::architecture.png["Architecture: players reach mc-waker; CMA reads the waker metric and scales the mc-ragnarok Deployment between 0 and 1",link=_images/architecture.png,window=_blank]
 _Click the diagram to open it full size._
 
 [.tiles.browse]

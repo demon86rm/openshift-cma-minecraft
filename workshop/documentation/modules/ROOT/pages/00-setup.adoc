@@ -22,12 +22,8 @@ Two paths are available:
 | `envsubst` | Ships with `gettext` (`brew install gettext` on macOS)
 | `curl` and `sha256sum` or `shasum` | Download and verify the workshop world
 | Minecraft: Java Edition | Optional. Version {mc-version}, with a valid account (the server runs in online mode). Without it, Step 4 wakes the server with `mc-monitor` instead; you only miss joining the world
-| Network | The client must reach the waker: a node on the NodePort assigned in Step 2, or, on cloud clusters, a port-forward or a cloud load balancer
+| Network | Only the cluster API: the client connects through `oc port-forward` (Step 2)
 |===
-
-NOTE: The NodePort is reachable from a laptop only if the nodes are. On many cloud and managed
-clusters (ROSA, ARO) worker nodes sit in private subnets. There, use the port-forward (or a cloud load
-balancer) described in xref:02-waker.adoc#cloud-clusters[Step 2] instead.
 
 '''
 
@@ -203,9 +199,7 @@ export NAMESPACE=minecraft
 | Variable | Used in | Description
 | `NAMESPACE` | `manifests/waker/mc-waker.yaml`, `manifests/keda/*.yaml` | Project that hosts the server, the waker and the ScaledObject
 | `CLUSTER_API_URL` | `myenv.sh` | API endpoint used by `oc login`
-| `NODE_IP` | Step 4 | Address of a node the Minecraft client can reach (set in Step 2)
-| `NODE_PORT` | Step 4 | Port of the `mc-ragnarok-nodeport` Service (set in Step 2)
-| `PLAYER_CIDR` | `manifests/aws/mc-ragnarok-lb.yaml` | Cloud load balancer only: public address range allowed to connect (set in Step 2)
+| `PLAYER_CIDR` | `manifests/aws/mc-ragnarok-lb.yaml` | Optional cloud load balancer only: public address range allowed to connect (Step 2)
 | `WAKER_URL` | Steps 3-4 | HTTPS Route to the waker API (set in Step 2)
 |===
 

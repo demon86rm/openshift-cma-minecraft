@@ -13,8 +13,8 @@ The Minecraft pod runs `itzg/minecraft-server` (Java Edition). Bedrock Edition i
 ## How it works
 
 ```
-Java client    ─►  NodePort  ─TCP─►  waker pod  ─TCP─►  mc-ragnarok pod
-                  (always 1)   25565            25565    (0..1, KEDA-scaled)
+Java client  ─►  oc port-forward  ─TCP─►  waker pod  ─TCP─►  mc-ragnarok pod
+(localhost:25565)                          (always 1)   25565   (0..1, KEDA-scaled)
                                        │
                                        └── publishes minecraft_desired_replicas (0/1) ──► ScaledObject
 ```
@@ -112,8 +112,9 @@ oc -n minecraft get deploy mc-ragnarok         # READY=1/1 shortly after
 ```
 
 End-to-end:
-- **Java client** — connect to `<node-ip>:<nodePort-tcp>`. First *Refresh* shows the sleeping MOTD; refresh again ~1 min later for the live server.
-- **ROSA / ARO / other cloud clusters** — worker nodes are usually in private subnets, so the NodePort is unreachable from a laptop. Run `oc -n minecraft port-forward svc/mc-ragnarok-waker 25565:25565` and connect to `localhost:25565` (works wherever `oc` works). If other people must connect, create a cloud load balancer restricted to their IPs and connect to its address on 25565 (on ARO / GCP drop the `aws-load-balancer-type` annotation):
+- **Java client** — run `oc -n minecraft port-forward svc/mc-ragnarok-waker 25565:25565` and connect to `localhost:25565`. This works on any cluster `oc` can reach (on-prem, ROSA, ARO, ...) and exposes nothing. First *Refresh* shows the sleeping MOTD; refresh again ~1 min later for the live server.
+- **No client** — `oc -n minecraft exec deploy/mc-ragnarok-waker -- mc-monitor status -host localhost -port 25565` sends the same Server List Ping.
+- **Other people connecting** — expose the waker instead: a NodePort when they can reach the nodes (`oc -n minecraft expose deployment/mc-ragnarok-waker --type=NodePort --port=25565 --name=mc-ragnarok-nodeport`), or a cloud load balancer restricted to their IPs (on ARO / GCP drop the `aws-load-balancer-type` annotation):
   ```bash
   export PLAYER_CIDR="$(curl -s https://checkip.amazonaws.com)/32"
   envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc -n minecraft apply -f -

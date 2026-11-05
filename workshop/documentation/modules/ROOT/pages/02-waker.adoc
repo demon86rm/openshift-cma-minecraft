@@ -100,46 +100,15 @@ service/mc-ragnarok-waker   ClusterIP   172.30.x.x     <none>        25565/TCP,8
 '''
 
 [#expose-players]
-=== 3. Expose the waker to players
+=== 3. Connect to the waker
 
-*What:* Apply the NodePort Services and record the address players will use.
+*What:* Forward local port 25565 to the waker. Run this in a separate terminal and keep it open
+for the rest of the workshop.
 
-*Why:* These Services select the *waker* pod, so there is always something on port 25565 even when the server has zero replicas.
-
-[.console-input]
-[source,bash,subs="+macros,+attributes"]
-----
-envsubst '$NAMESPACE' < manifests/minecraft/mc-ragnarok-np.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
-export NODE_PORT=$(oc get svc mc-ragnarok-nodeport -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.spec.ports[0].nodePort}')
-export NODE_IP=$(oc get nodes -l node-role.kubernetes.io/worker --context {cma-context} -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-echo "Minecraft server address: $NODE_IP:$NODE_PORT"
-----
-
-NOTE: `NODE_IP` above is the node's internal address. If clients connect from outside the
-cluster network, use an address of the node they can actually reach. Add `NODE_IP`, `NODE_PORT`
-and `WAKER_URL` (sub-step 4) to
-`myenv.sh`.
-
-.Verify: the NodePort points at the waker
-[%collapsible]
-====
-[.console-input]
-[source,bash,subs="+macros,+attributes"]
-----
-oc get endpoints mc-ragnarok-nodeport -n "$NAMESPACE" --context {cma-context}
-oc get pod -l app.kubernetes.io/name=mc-ragnarok-waker -o wide -n "$NAMESPACE" --context {cma-context}
-----
-
-The endpoint IP is the waker pod IP, not the `mc-ragnarok` pod IP.
-====
-
-[#cloud-clusters]
-==== On ROSA, ARO and other cloud clusters
-
-On managed cloud clusters (ROSA, ARO, OpenShift Dedicated) the worker nodes usually sit in private
-subnets, so the NodePort is not reachable from a laptop. Forward the waker port to your machine
-instead: `oc port-forward` goes through the cluster API, so it works wherever `oc` works. Run this
-in a separate terminal and keep it open for the whole demo:
+*Why:* Players must reach the *waker*, not the server, so there is always something on port 25565
+even when the server has zero replicas. `oc port-forward` goes through the cluster API, so the same
+command works on any cluster you can reach with `oc` (on-premises, ROSA, ARO, OpenShift Dedicated,
+OpenShift Local), opens no port on the nodes and exposes nothing to the internet.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -147,27 +116,51 @@ in a separate terminal and keep it open for the whole demo:
 oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context {cma-context}
 ----
 
-Then point the client at the local end of the tunnel:
+The Minecraft server address is `localhost:25565`. If the `oc` session expires the tunnel stops:
+run the command again. Tested on ROSA HCP 4.22: the tunnel survives the server scaling from 0 to 1.
+
+.Verify: the tunnel reaches the waker
+[%collapsible]
+====
+In another terminal:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-export NODE_IP=localhost
-export NODE_PORT=25565
-echo "Minecraft server address: $NODE_IP:$NODE_PORT"
+nc -z localhost 25565 && echo reachable
 ----
 
-The traffic still goes through the waker, so the wake-up works the same way. Tested on ROSA HCP
-4.22: the tunnel survives the server scaling from 0 to 1. Nothing is exposed to the internet and
-no cloud resource is created. If the `oc` session expires the tunnel stops: run the command again.
+[.console-output]
+[source,bash]
+----
+reachable
+----
 
-[#cloud-lb]
-===== Option: a cloud load balancer
+The port-forward terminal prints `Handling connection for 25565`. A bare TCP connect like this
+one does not wake the server: the waker only does that after a real Minecraft handshake.
+====
 
-When other people must connect from their own machines, put a cloud load balancer in front of
-the waker instead, open only to their public addresses. The cloud provider creates it from a
-`Service` of `type: LoadBalancer` and removes it when the Service is deleted. The manifest asks
-AWS for a Network Load Balancer:
+[#other-access]
+==== Other ways to reach the waker
+
+The port-forward only serves the machine that runs it. If other people must connect from their
+own machines, expose the waker in one of these ways instead. Both select the waker pod, never the
+server.
+
+NodePort, when the clients can reach the cluster nodes (typically on-premises; on ROSA and ARO the
+workers sit in private subnets). It opens the printed port on every node to the whole network
+that can reach them:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc expose deployment/mc-ragnarok-waker --type=NodePort --port=25565 --name=mc-ragnarok-nodeport -n "$NAMESPACE" --context {cma-context}
+oc get svc mc-ragnarok-nodeport -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.spec.ports[0].nodePort}{"\n"}'
+----
+
+Cloud load balancer, open only to the clients' public addresses. The manifest asks AWS for a
+Network Load Balancer (tested on ROSA HCP 4.22); on ARO or OpenShift Dedicated on Google Cloud,
+drop the AWS annotation with `| sed '/aws-load-balancer-type/d'` before `oc apply` (not tested):
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -177,31 +170,9 @@ envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc apply -n "$NAME
 oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -w
 ----
 
-On ARO or OpenShift Dedicated on Google Cloud, drop the AWS annotation and let the platform pick
-its default load balancer (not tested):
-
-[.console-input]
-[source,bash,subs="+macros,+attributes"]
-----
-envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | sed '/aws-load-balancer-type/d' | oc apply -n "$NAMESPACE" --context {cma-context} -f -
-----
-
-`PLAYER_CIDR` above is your own address; widen it for the people who need to connect. When
-`EXTERNAL-IP` shows an address (a hostname on AWS, an IP on Azure and Google Cloud), use it as the
-server address:
-
-[.console-input]
-[source,bash,subs="+macros,+attributes"]
-----
-export NODE_IP=$(oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
-export NODE_PORT=25565
-echo "Minecraft server address: $NODE_IP:$NODE_PORT"
-----
-
-NOTE: Load balancer health checks do not wake the server: the waker only raises the wake signal
-after a real Minecraft handshake, so a bare TCP probe is ignored. On ROSA HCP 4.22 the NLB checks
-do not even reach port 25565. The load balancer is billed while it exists; delete it after the
-session with `oc delete svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context}`.
+The server address is the `EXTERNAL-IP` (a hostname on AWS) on port 25565. Load balancer health
+checks do not wake the server, for the same reason as the `nc` above. The load balancer is billed
+while it exists.
 
 '''
 
@@ -246,7 +217,7 @@ it yet, so the server keeps running.
 | Problem from Step 1 | How This Step Solves It
 
 | No stable entry point while the server is down
-| The NodePort targets the waker, which is always up and answers on 25565
+| Players connect to the waker, which is always up and answers on 25565
 
 | Demand cannot be measured on a workload at zero replicas
 | The waker sees connection attempts and publishes them as a 0/1 metric
@@ -286,14 +257,14 @@ it yet, so the server keeps running.
 
 == Reset
 
-Remove the entry points first so no client hits a waker that is going away, then the waker and
-its build.
+Stop the port-forward (Ctrl+C), remove the entry points so no client hits a waker that is going
+away, then the waker and its build.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
 oc delete route mc-ragnarok-waker -n "$NAMESPACE" --context {cma-context} --ignore-not-found
-oc delete -f manifests/minecraft/mc-ragnarok-np.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
+oc delete svc mc-ragnarok-nodeport mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} --ignore-not-found
 oc delete -f manifests/waker/mc-waker.yaml -n "$NAMESPACE" --context {cma-context} --ignore-not-found
 oc delete bc,is -l build=mc-waker -n "$NAMESPACE" --context {cma-context} --ignore-not-found
 ----
