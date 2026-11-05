@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"net"
 	"testing"
 )
 
@@ -78,5 +79,62 @@ func TestBuildSleepingStatus(t *testing.T) {
 	}
 	if !bytes.Contains([]byte(js), []byte(`"text":"test motd"`)) {
 		t.Fatalf("status JSON missing MOTD; got %s", js)
+	}
+}
+
+// TestSleepingClientWakesOnlyOnHandshake: a bare TCP connect (LB health check,
+// port scan) must not wake the server; a status handshake must.
+func TestSleepingClientWakesOnlyOnHandshake(t *testing.T) {
+	cases := []struct {
+		name string
+		send []byte
+		want int
+	}{
+		{"empty connection", nil, 0},
+		{"garbage", []byte("GET / HTTP/1.1\r\n\r\n"), 0},
+		{"status handshake", statusHandshake(), 1},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			client, server := net.Pipe()
+			go func() {
+				if c.send != nil {
+					_, _ = client.Write(c.send)
+				}
+				client.Close()
+			}()
+			wakes := 0
+			_ = handleSleepingClient(server, config{}, func() { wakes++ })
+			if wakes != c.want {
+				t.Fatalf("wakes: got %d, want %d", wakes, c.want)
+			}
+		})
+	}
+}
+
+func statusHandshake() []byte {
+	var body []byte
+	body = appendVarInt(body, 769)
+	body = append(body, encodeString("localhost")...)
+	body = append(body, 0x63, 0xDD) // port 25565
+	body = appendVarInt(body, nextStateStatus)
+	var buf bytes.Buffer
+	_ = writePacket(&buf, pktHandshake, body)
+	return buf.Bytes()
+}
+
+func TestBedrockWakePackets(t *testing.T) {
+	ping := append([]byte{raknetIDUnconnectedPing}, make([]byte, 8)...)
+	ping = append(append(ping, raknetMagic...), make([]byte, 8)...)
+	ocr1 := append(append([]byte{raknetIDOpenConnectionReq1}, raknetMagic...), 11, 0, 0)
+	noMagic := append([]byte{raknetIDOpenConnectionReq1}, make([]byte, 20)...)
+
+	if !isUnconnectedPing(ping) || !isOpenConnectionRequest1(ocr1) {
+		t.Fatal("valid ping / OCR1 not recognised")
+	}
+	for _, p := range [][]byte{noMagic, []byte("hello"), nil} {
+		if isUnconnectedPing(p) || isOpenConnectionRequest1(p) {
+			t.Fatalf("stray packet %v treated as a wake packet", p)
+		}
 	}
 }

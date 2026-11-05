@@ -95,15 +95,14 @@ if upstreamReady {
     s.setUpstream(false, 0)   // cached state was a lie; fall through
 }
 
-s.signalWake()
-handleSleepingClient(client, s.cfg)
+handleSleepingClient(client, s.cfg, s.signalWake)   // wakes only after a valid handshake
 ```
 
 There are two ways a connection gets handled:
 
 **Path A — transparent proxy.** The probe says the upstream is up *and* the last probe is recent. We dial the real server and run `proxyBidir`, which is just two `io.Copy` goroutines (one in each direction) racing to EOF. When the first one finishes, we `CloseWrite()` on the still-open side so the peer sees EOF and doesn't hang forever, then wait up to 2s for the other half to drain.
 
-**Path B — sleeping handler.** The probe says the upstream is down (or the cached state is stale, or Path A's dial failed). We bump the wake deadline and hand the connection to `handleSleepingClient` in `slp.go`, which speaks just enough of the Minecraft protocol to send back a fake "server-list" entry.
+**Path B — sleeping handler.** The probe says the upstream is down (or the cached state is stale, or Path A's dial failed). We hand the connection to `handleSleepingClient` in `slp.go`, which speaks just enough of the Minecraft protocol to send back a fake "server-list" entry. It bumps the wake deadline only after reading a valid handshake with next state status or login, so a bare TCP connect (a load balancer health check, a port scanner, `nc -z`) never wakes the server.
 
 > **Why not always dial first?** Because during pod startup the kernel accepts TCP on 25565 *before* the JVM has bound its socket — we'd connect, proxy, and the player would hang. Trusting the cached probe (which checks via SLP/RakNet, not raw TCP) avoids that.
 
@@ -127,7 +126,7 @@ The waker solves this with a **per-client session table**: `map[string]*udpSessi
 client UDP datagram arrives on the public listener
         │
         ▼
-signalWake()  ─── always bump wake on any datagram (covers cached server-list entries)
+signalWake()  ─── only for Unconnected Ping (0x01) or Open Connection Request 1 (0x05), both with the RakNet magic
         │
         ▼
 is upstream up & recent?
