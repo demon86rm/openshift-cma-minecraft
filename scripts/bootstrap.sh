@@ -259,7 +259,7 @@ if [[ "$UNINSTALL" -eq 1 ]]; then
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/keda/scaledobject-metricsapi.yaml" --ignore-not-found
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/keda/scaledobject-prometheus.yaml" --ignore-not-found
   oc delete -n "$NAMESPACE" route mc-ragnarok-waker                           --ignore-not-found
-  oc delete -n "$NAMESPACE" svc mc-ragnarok-lb                                --ignore-not-found # AWS NLB from manifests/aws/, if created
+  oc delete -n "$NAMESPACE" svc mc-ragnarok-lb mc-ragnarok-nodeport           --ignore-not-found # optional entry points, if created
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/waker/"                            --ignore-not-found
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/minecraft/"                        --ignore-not-found
   oc delete -n "$NAMESPACE" pod mc-ragnarok-seed --ignore-not-found # remove a leftover seed helper pod, if any
@@ -365,7 +365,9 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   echo '  curl -sk $ROUTE/scaler # This will show the current desired replicas value'
   echo '  curl -skX POST $ROUTE/wake # This will simulate the same api request that KEDA/CMA will do to trigger the autoscaler'
   echo '  curl -sk $ROUTE/status | jq # All the info that you can pull from the waker pod are here.'
-  
-oc -n minecraft get scaledobject mc-ragnarok   # ACTIVE=True within ~15s of a wake
-oc -n minecraft get deploy mc-ragnarok         # READY=1/1 shortly after
+  echo "  oc -n $NAMESPACE get scaledobject mc-ragnarok   # ACTIVE=True within ~15s of a wake"
+  echo "  oc -n $NAMESPACE get deploy mc-ragnarok         # READY=1/1 shortly after"
+  echo
+  echo "Connect a Minecraft client to localhost:25565 after running:"
+  echo "  oc -n $NAMESPACE port-forward svc/mc-ragnarok-waker 25565:25565"
 fi

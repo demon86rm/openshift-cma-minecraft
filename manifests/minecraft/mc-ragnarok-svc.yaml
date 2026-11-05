@@ -1,8 +1,7 @@
 ---
 # Internal ClusterIP Service that the waker uses to reach the
-# mc-ragnarok pod. External player traffic does NOT go here — it
-# lands on the NodePort Service "mc-ragnarok-nodeport" (same
-# directory) which selects the waker pod instead.
+# mc-ragnarok pod. Player traffic does NOT go here: it goes to the
+# waker (manifests/waker/), which proxies to this Service.
 #
 # The selector below matches the label the mc-ragnarok pod carries.
 # Confirm with:

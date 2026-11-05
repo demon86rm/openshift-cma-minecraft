@@ -30,8 +30,8 @@ spec:
   template:
     metadata:
       labels:
-        # IMPORTANT: this label set is what the NodePort Service
-        # "mc-ragnarok-nodeport" selects to route player traffic to the waker.
+        # IMPORTANT: player traffic reaches the waker through this label
+        # (Service mc-ragnarok-waker below, and the optional NodePort / load balancer).
         app.kubernetes.io/name: mc-ragnarok-waker
         app.kubernetes.io/part-of: mc-ragnarok
         app.kubernetes.io/component: waker
@@ -81,8 +81,8 @@ spec:
 ---
 # ClusterIP Service for the waker — used by KEDA (metrics-api trigger) and
 # Prometheus (ServiceMonitor) to reach the /scaler and /metrics endpoints.
-# It does NOT expose Minecraft externally; the NodePort Service
-# "mc-ragnarok-nodeport" (in manifests/minecraft/) does that.
+# Players reach it with `oc port-forward svc/mc-ragnarok-waker 25565:25565`;
+# nothing is exposed outside the cluster by default.
 apiVersion: v1
 kind: Service
 metadata:
@@ -98,5 +98,3 @@ spec:
   ports:
     - { name: mc-java, port: 25565, targetPort: minecraft, protocol: TCP }
     - { name: metrics,   port: 8080,  targetPort: metrics,   protocol: TCP }
-    # External player traffic uses the NodePort Service
-    # (manifests/minecraft/mc-ragnarok-np.yaml). This ClusterIP exists for internal scrapers.
