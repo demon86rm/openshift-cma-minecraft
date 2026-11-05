@@ -136,10 +136,36 @@ The endpoint IP is the waker pod IP, not the `mc-ragnarok` pod IP.
 [#rosa]
 ==== On ROSA and other AWS clusters
 
-ROSA worker nodes sit in private subnets, so the NodePort is not reachable from a laptop. Put an
-AWS Network Load Balancer in front of the waker instead, open only to the players' public
-addresses. The AWS cloud provider creates the NLB from a `Service` of `type: LoadBalancer` and
-removes it when the Service is deleted.
+ROSA worker nodes sit in private subnets, so the NodePort is not reachable from a laptop. In a
+facilitator-led session only the presenter plays, so forward the waker port to the presenter's
+machine. Run this in a separate terminal and keep it open for the whole demo:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context {cma-context}
+----
+
+Then point the client at the local end of the tunnel:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export NODE_IP=localhost
+export NODE_PORT=25565
+echo "Minecraft server address: $NODE_IP:$NODE_PORT"
+----
+
+The traffic still goes through the waker, so the wake-up works the same way. Tested on ROSA HCP
+4.22: the tunnel survives the server scaling from 0 to 1. Nothing is exposed to the internet and
+no AWS resource is created. If the `oc` session expires the tunnel stops: run the command again.
+
+[#rosa-nlb]
+===== If the audience joins
+
+When attendees connect from their own laptops, put an AWS Network Load Balancer in front of the
+waker instead, open only to their public addresses. The AWS cloud provider creates the NLB from a
+`Service` of `type: LoadBalancer` and removes it when the Service is deleted.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -149,6 +175,7 @@ envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc apply -n "$NAME
 oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -w
 ----
 
+`PLAYER_CIDR` above is the presenter's address; for the audience use the venue's public range.
 When `EXTERNAL-IP` shows a hostname, wait for it to resolve (1-3 minutes) and use it as the
 server address:
 
@@ -164,11 +191,6 @@ NOTE: The NLB health checks do not wake the server: on ROSA HCP 4.22 they do not
 on port 25565, and the waker only raises the wake signal after a real Minecraft handshake. The NLB
 is billed while it exists; delete it after the session with
 `oc delete svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context}`.
-
-TIP: For a presenter-only demo, skip the NLB: run
-`oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context {cma-context}` and
-connect the client to `localhost:25565`. The traffic still goes through the waker, so the wake-up
-works the same way.
 
 '''
 
