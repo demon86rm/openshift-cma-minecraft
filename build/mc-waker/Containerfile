@@ -42,7 +42,7 @@ FROM docker.io/itzg/minecraft-server:latest AS mc-monitor
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 
 LABEL org.opencontainers.image.title="mc-waker" \
-      org.opencontainers.image.description="Scale-from-zero waker for a Minecraft server pod (Java + Bedrock), driven by KEDA / OpenShift Custom Metrics Autoscaler." \
+      org.opencontainers.image.description="Scale-from-zero waker for a Minecraft server pod (Java Edition), driven by KEDA / OpenShift Custom Metrics Autoscaler." \
       org.opencontainers.image.source="https://github.com/redhat-workshop/openshift-cma-minecraft" \
       org.opencontainers.image.licenses="Apache-2.0"
 
@@ -53,9 +53,8 @@ COPY --from=mc-monitor ${MC_MONITOR_SRC}     /usr/local/bin/mc-monitor
 
 # Document the ports.
 #   25565/tcp  — Java SLP + login (always on)
-#   19132/udp  — Bedrock Unconnected Ping (only listens if WAKER_BEDROCK_LISTEN is set)
 #    8080/tcp  — HTTP metrics + /scaler + admin
-EXPOSE 25565/tcp 19132/udp 8080/tcp
+EXPOSE 25565/tcp 8080/tcp
 USER 1001
 
 ENTRYPOINT ["/usr/local/bin/mc-waker"]

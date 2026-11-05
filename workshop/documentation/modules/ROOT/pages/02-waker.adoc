@@ -93,7 +93,7 @@ NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/mc-ragnarok-waker   1/1     1            1           40s
 
 NAME                        TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                                AGE
-service/mc-ragnarok-waker   ClusterIP   172.30.x.x     <none>        25565/TCP,19132/UDP,8080/TCP           40s
+service/mc-ragnarok-waker   ClusterIP   172.30.x.x     <none>        25565/TCP,8080/TCP                     40s
 ----
 ====
 

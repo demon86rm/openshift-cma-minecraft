@@ -13,29 +13,19 @@ import (
 // runProbe periodically asks the upstream Minecraft server(s) for their player
 // counts. The result is cached on `state` and exposed via Prometheus + the
 // /scaler endpoint, where KEDA can pick it up.
-//
-// Both Java and Bedrock are probed in the same tick. Bedrock probing is
-// skipped entirely if cfg.BedrockUpstreamAddr is empty.
 func runProbe(ctx context.Context, s *state) {
 	t := time.NewTicker(s.cfg.ProbeInterval)
 	defer t.Stop()
 
-	probeOnce(s) // probe immediately so the first metric scrape is meaningful
+	probeJava(s) // probe immediately so the first metric scrape is meaningful
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			probeOnce(s)
+			probeJava(s)
 		}
-	}
-}
-
-func probeOnce(s *state) {
-	probeJava(s)
-	if s.cfg.BedrockUpstreamAddr != "" {
-		probeBedrock(s)
 	}
 }
 
@@ -79,39 +69,18 @@ func fallbackJavaSLP(s *state) {
 	s.log.Debug("probe(java/slp): upstream up", "players", online)
 }
 
-// probeBedrock asks mc-monitor for the Bedrock upstream's status. There is no
-// in-Go fallback here — Bedrock probing is opt-in via configuration, so if
-// mc-monitor is missing we simply log and mark the upstream down.
-func probeBedrock(s *state) {
-	if s.cfg.McMonitorPath == "" || !mcMonitorUsable(s.cfg.McMonitorPath) {
-		s.setBedrockUpstream(false, 0)
-		s.log.Warn("probe(bedrock): mc-monitor unavailable; cannot probe Bedrock")
-		return
-	}
-	online, err := mcMonitorStatus(s.cfg, "status-bedrock", s.cfg.BedrockUpstreamAddr)
-	if err != nil {
-		s.setBedrockUpstream(false, 0)
-		s.log.Debug("probe(bedrock): upstream down", "err", err)
-		return
-	}
-	s.setBedrockUpstream(true, online)
-	s.log.Debug("probe(bedrock): upstream up", "players", online)
-}
-
 // mcMonitorStatus invokes the itzg `mc-monitor` binary with the correct
 // single-dash flag syntax it actually uses:
 //
-//   mc-monitor status         -host H -port P
-//   mc-monitor status-bedrock -host H -port P
+//   mc-monitor status -host H -port P
 //
-// Both subcommands print a one-liner to stdout that always contains the
+// It prints a one-liner to stdout that always contains the
 // player count as `online=N` and the cap as `max=M`. Exit code 0 means
 // "server answered"; non-zero means it didn't. There is no JSON output
 // mode in current builds, so we don't try.
 //
 // Example outputs (observed):
-//   mc-ragnarok:25565         : version=1.21.11 online=0 max=20 motd='Welcome to the CMA Workshop!'
-//   mc-ragnarok-bedrock:19132 : version=1.26.23 online=0 max=5
+//   mc-ragnarok:25565 : version=1.21.11 online=0 max=20 motd='Welcome to the CMA Workshop!'
 func mcMonitorStatus(cfg config, subcmd, addr string) (int, error) {
 	host, port, err := splitHostPort(addr)
 	if err != nil {

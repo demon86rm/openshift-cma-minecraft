@@ -12,9 +12,9 @@ itself.
 * `NAMESPACE` exported in your shell
 * `oc` CLI authenticated with rights to create a project
 
-NOTE: The server images (`docker.io/itzg/minecraft-server` and `docker.io/itzg/minecraft-bedrock-server`)
-come from Docker Hub: there is no Red Hat build of a Minecraft server. The pod also runs a Bedrock
-container on UDP 19132; this workshop focuses on the Java path, Bedrock follows the same pattern.
+NOTE: The server image (`docker.io/itzg/minecraft-server`) comes from Docker Hub: there is no Red
+Hat build of a Minecraft server. Bedrock Edition is not covered: since 1.26 its clients connect only
+over NetherNet (WebRTC with Microsoft signaling), which the waker can neither detect nor proxy.
 
 == How It Works
 
@@ -87,7 +87,6 @@ oc get pvc -n "$NAMESPACE" --context {cma-context}
 [source,bash]
 ----
 NAME                          STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-mc-ragnarok-bedrock-datadir   Pending                                      gp3-csi        10s
 mc-ragnarok-datadir           Pending                                      gp3-csi        10s
 ----
 

@@ -2,7 +2,7 @@
 
 A hands-on workshop on the **OpenShift Custom Metrics Autoscaler** (CMA / KEDA). You'll scale a Minecraft server pod from **0 to 1 and back** based on player intent — a custom metric the workload itself can't possibly report while it's at zero replicas.
 
-The Minecraft pod runs **two containers**: an `itzg/minecraft-server` (Java Edition) for macOS/Linux clients, and an `itzg/minecraft-bedrock-server` (Bedrock Edition) for consoles, mobile, and Windows 10/11 — so a single demo covers every Minecraft client on the planet. KEDA scales the pod as a whole; the waker fronts both protocols.
+The Minecraft pod runs `itzg/minecraft-server` (Java Edition). Bedrock Edition is not supported: since 1.26 its clients connect only over NetherNet (WebRTC with Microsoft signaling), which the waker can neither detect nor proxy.
 
 ## What it teaches
 
@@ -15,15 +15,13 @@ The Minecraft pod runs **two containers**: an `itzg/minecraft-server` (Java Edit
 ```
 Java client    ─►  NodePort  ─TCP─►  waker pod  ─TCP─►  mc-ragnarok pod
                   (always 1)   25565            25565    (0..1, KEDA-scaled)
-Bedrock client ─►  NodePort  ─UDP─►  waker pod  ─UDP─►   ├─ java container :25565
-                  (always 1)   19132            19132    └─ bedrock container :19132
                                        │
                                        └── publishes minecraft_desired_replicas (0/1) ──► ScaledObject
 ```
 
-The **waker** is a small Go service that always listens on TCP `25565` (Java) and UDP `19132` (Bedrock). When `mc-ragnarok` is up, it transparently proxies both protocols. When it's at zero replicas, it answers the Minecraft client's *Refresh* (Java SLP) or server-list ping (Bedrock RakNet) with a "Sleeping" entry and raises the metric to `1`. KEDA picks that up, scales the Minecraft Deployment to `1`, and the next refresh gets the live server. After the last player leaves and `cooldownPeriod` elapses, KEDA scales it back to `0`.
+The **waker** is a small Go service that always listens on TCP `25565`. When `mc-ragnarok` is up, it transparently proxies the connection. When it's at zero replicas, it answers the Minecraft client's *Refresh* (Server List Ping) with a "Sleeping" entry and raises the metric to `1`; a bare TCP connect (load balancer health check, port scanner) does not wake it. KEDA picks that up, scales the Minecraft Deployment to `1`, and the next refresh gets the live server. After the last player leaves and `cooldownPeriod` elapses, KEDA scales it back to `0`.
 
-Source walkthrough for the waker — both protocols, the proxy paths, the probe loop, the metrics: **[`docs/mc-waker-internals.md`](docs/mc-waker-internals.md)**. For an architectural comparison with Knative / OpenShift Serverless: **[`docs/keda-vs-knative.md`](docs/keda-vs-knative.md)**.
+Source walkthrough for the waker — the proxy paths, the probe loop, the metrics: **[`docs/mc-waker-internals.md`](docs/mc-waker-internals.md)**. For an architectural comparison with Knative / OpenShift Serverless: **[`docs/keda-vs-knative.md`](docs/keda-vs-knative.md)**.
 
 ## Repo layout
 
@@ -32,7 +30,7 @@ build/mc-waker/                    Go source for the waker + Containerfile + Mak
 mc-data/                           prebuilt world tarball (downloaded from the world-v1 Release, not committed)
 manifests/
 ├── keda/                          KedaController + the two ScaledObject variants
-├── minecraft/                     Deployment (java + bedrock containers), PVC, Services, Secrets
+├── minecraft/                     Deployment, PVC, Services, Secrets
 └── waker/                         waker Deployment + ServiceMonitor
 scripts/
 ├── bootstrap.sh                   one-shot installer (NAMESPACE/TRIGGER as env vars)
@@ -93,7 +91,7 @@ The script applies the `KedaController`, creates the namespace, runs `make ocp-b
 
 ### World seeding
 
-`mc-data/mc-ragnarok-data.tar.gz` is a prebuilt Java world (the `ragnarok` level). It is not committed: if missing, the script downloads it from the [`world-v1` Release](https://github.com/demon86rm/openshift-cma-minecraft/releases/tag/world-v1) and verifies its sha256 (override with `WORLD_URL` / `WORLD_SHA256`). On the first install the script extracts it into the `mc-ragnarok-datadir` PVC at `/data/ragnarok` **before** the server boots, so `mc-ragnarok` comes up on the workshop world instead of generating a fresh one. Because the PVC is `ReadWriteOnce`, seeding runs via a short-lived helper pod while the Deployment is scaled to zero — it never fights the running server for the volume. The step is idempotent: if a world is already present it is left untouched (skipped), unless you pass `--force-seed`. Use `--skip-seed` to start from a freshly generated world instead. The Bedrock world is not seeded — it generates on first boot. Override the source archive or level name with the `WORLD_TARBALL` and `WORLD_LEVEL` env vars.
+`mc-data/mc-ragnarok-data.tar.gz` is a prebuilt Java world (the `ragnarok` level). It is not committed: if missing, the script downloads it from the [`world-v1` Release](https://github.com/demon86rm/openshift-cma-minecraft/releases/tag/world-v1) and verifies its sha256 (override with `WORLD_URL` / `WORLD_SHA256`). On the first install the script extracts it into the `mc-ragnarok-datadir` PVC at `/data/ragnarok` **before** the server boots, so `mc-ragnarok` comes up on the workshop world instead of generating a fresh one. Because the PVC is `ReadWriteOnce`, seeding runs via a short-lived helper pod while the Deployment is scaled to zero — it never fights the running server for the volume. The step is idempotent: if a world is already present it is left untouched (skipped), unless you pass `--force-seed`. Use `--skip-seed` to start from a freshly generated world instead. Override the source archive or level name with the `WORLD_TARBALL` and `WORLD_LEVEL` env vars.
 
 `mc-ragnarok` will scale to `0` within ~60s of being idle (configurable via the ScaledObject's `cooldownPeriod`).
 
@@ -106,21 +104,18 @@ ROUTE="https://$(oc -n minecraft get route mc-ragnarok-waker -o jsonpath='{.spec
 
 curl -s   "$ROUTE/scaler"        # {"value":0}  when sleeping, {"value":1} when awake
 curl -sX POST "$ROUTE/wake"      # manual wake — flips the metric to 1
-curl -s   "$ROUTE/status" | jq   # full state JSON (java + bedrock upstream health, wake_active, ...)
+curl -s   "$ROUTE/status" | jq   # full state JSON (upstream health, wake_active, ...)
 
 oc -n minecraft get scaledobject mc-ragnarok   # ACTIVE=True within ~15s of a wake
-oc -n minecraft get deploy mc-ragnarok         # READY=2/2 shortly after
+oc -n minecraft get deploy mc-ragnarok         # READY=1/1 shortly after
 ```
 
 End-to-end:
 - **Java client** — connect to `<node-ip>:<nodePort-tcp>`. First *Refresh* shows the sleeping MOTD; refresh again ~30s later for the live server.
-- **Bedrock client** — Add Server with `<node-ip>:<nodePort-udp>`. Same flow: first ping shows "Sleeping", second one shows the live server.
 
 ## Tuning
 
 CMA-side knobs live on the `ScaledObject` (`pollingInterval`, `cooldownPeriod`, `fallback`, the `behavior` block). Waker-side knobs are `WAKER_*` env vars in `manifests/waker/mc-waker.yaml` — the most demo-relevant is `WAKER_WAKE_HOLD` (default `3m`; drop to `30s` if you want to demo the cooldown faster).
-
-To enable or disable Bedrock support, toggle `WAKER_BEDROCK_LISTEN` and `WAKER_BEDROCK_UPSTREAM` in the waker Deployment. Both must be set for the UDP path to activate; clearing either leaves the waker running Java-only.
 
 ## Cleanup
 
@@ -138,4 +133,4 @@ The cluster-scoped `KedaController` (in `openshift-keda`) is left alone in eithe
 
 - OpenShift docs — [Custom Metrics Autoscaler Operator](https://docs.openshift.com/container-platform/latest/nodes/cma/nodes-cma-autoscaling-custom.html)
 - KEDA docs — [`ScaledObject` concepts](https://keda.sh/docs/latest/concepts/scaling-deployments/), [`metrics-api` trigger](https://keda.sh/docs/latest/scalers/metrics-api/), [`prometheus` trigger](https://keda.sh/docs/latest/scalers/prometheus/)
-- itzg images — [`minecraft-server`](https://github.com/itzg/docker-minecraft-server), [`minecraft-bedrock-server`](https://github.com/itzg/docker-minecraft-bedrock-server), [`mc-monitor`](https://github.com/itzg/mc-monitor)
+- itzg images — [`minecraft-server`](https://github.com/itzg/docker-minecraft-server), [`mc-monitor`](https://github.com/itzg/mc-monitor)
