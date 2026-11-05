@@ -259,6 +259,7 @@ if [[ "$UNINSTALL" -eq 1 ]]; then
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/keda/scaledobject-metricsapi.yaml" --ignore-not-found
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/keda/scaledobject-prometheus.yaml" --ignore-not-found
   oc delete -n "$NAMESPACE" route mc-ragnarok-waker                           --ignore-not-found
+  oc delete -n "$NAMESPACE" svc mc-ragnarok-lb                                --ignore-not-found # AWS NLB from manifests/aws/, if created
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/waker/"                            --ignore-not-found
   oc delete -n "$NAMESPACE" -f "$MANIFESTS/minecraft/"                        --ignore-not-found
   oc delete -n "$NAMESPACE" pod mc-ragnarok-seed --ignore-not-found # remove a leftover seed helper pod, if any
@@ -283,7 +284,7 @@ apply_cluster "$MANIFESTS/keda/kedacontroller.yaml"
 # 1) Namespace
 note "Ensuring namespace '$NAMESPACE' exists"
 if [[ "$DRY_RUN" -eq 0 ]]; then
-  oc get ns "$NAMESPACE" >/dev/null 2>&1 || oc new-project "$NAMESPACE" >/dev/null
+  oc get ns "$NAMESPACE" >/dev/null 2>&1 || oc new-project "$NAMESPACE" --skip-config-write >/dev/null # keep the current context
 fi
 
 # 2) Build the waker image into the namespace's ImageStream (in-cluster).

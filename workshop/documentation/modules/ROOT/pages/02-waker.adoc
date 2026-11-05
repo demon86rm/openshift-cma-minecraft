@@ -133,6 +133,43 @@ oc get pod -l app.kubernetes.io/name=mc-ragnarok-waker -o wide -n "$NAMESPACE" -
 The endpoint IP is the waker pod IP, not the `mc-ragnarok` pod IP.
 ====
 
+[#rosa]
+==== On ROSA and other AWS clusters
+
+ROSA worker nodes sit in private subnets, so the NodePort is not reachable from a laptop. Put an
+AWS Network Load Balancer in front of the waker instead, open only to the players' public
+addresses. The AWS cloud provider creates the NLB from a `Service` of `type: LoadBalancer` and
+removes it when the Service is deleted.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export PLAYER_CIDR="$(curl -s https://checkip.amazonaws.com)/32"
+envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -w
+----
+
+When `EXTERNAL-IP` shows a hostname, wait for it to resolve (1-3 minutes) and use it as the
+server address:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export NODE_IP=$(oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+export NODE_PORT=25565
+echo "Minecraft server address: $NODE_IP:$NODE_PORT"
+----
+
+NOTE: The NLB health checks do not wake the server: on ROSA HCP 4.22 they do not reach the waker
+on port 25565, and the waker only raises the wake signal after a real Minecraft handshake. The NLB
+is billed while it exists; delete it after the session with
+`oc delete svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context}`.
+
+TIP: For a presenter-only demo, skip the NLB: run
+`oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context {cma-context}` and
+connect the client to `localhost:25565`. The traffic still goes through the waker, so the wake-up
+works the same way.
+
 '''
 
 [#read-metric]
