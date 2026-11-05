@@ -29,6 +29,7 @@ Source walkthrough for the waker — the proxy paths, the probe loop, the metric
 build/mc-waker/                    Go source for the waker + Containerfile + Makefile
 mc-data/                           prebuilt world tarball (downloaded from the world-v1 Release, not committed)
 manifests/
+├── aws/                           NLB Service for ROSA / AWS (applied by hand, not by bootstrap.sh)
 ├── keda/                          KedaController + the two ScaledObject variants
 ├── minecraft/                     Deployment, PVC, Services, Secrets
 └── waker/                         waker Deployment + ServiceMonitor
@@ -44,7 +45,7 @@ docs/
 
 - This project has been tested on OpenShift 4.21.14; other versions should be fine, mileage may vary.
 - A user with cluster-admin privileges is needed for the initial install.
-- The **Custom Metrics Autoscaler Operator** installed (OperatorHub → "Custom Metrics Autoscaler").
+- The **Custom Metrics Autoscaler Operator** installed (OperatorHub → "Custom Metrics Autoscaler"). `bootstrap.sh` creates the `KedaController` but does not install the operator.
 - For the Prometheus variant: cluster-wide [User Workload Monitoring](https://docs.openshift.com/container-platform/latest/observability/monitoring/enabling-monitoring-for-user-defined-projects.html) enabled.
 
 ## Build the waker image (manual / external registry)
@@ -111,7 +112,14 @@ oc -n minecraft get deploy mc-ragnarok         # READY=1/1 shortly after
 ```
 
 End-to-end:
-- **Java client** — connect to `<node-ip>:<nodePort-tcp>`. First *Refresh* shows the sleeping MOTD; refresh again ~30s later for the live server.
+- **Java client** — connect to `<node-ip>:<nodePort-tcp>`. First *Refresh* shows the sleeping MOTD; refresh again ~1 min later for the live server.
+- **ROSA / AWS** — worker nodes are in private subnets, so the NodePort is unreachable from a laptop. Create an NLB restricted to your IP and connect to its hostname on 25565:
+  ```bash
+  export PLAYER_CIDR="$(curl -s https://checkip.amazonaws.com)/32"
+  envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc -n minecraft apply -f -
+  oc -n minecraft get svc mc-ragnarok-lb   # EXTERNAL-IP = hostname to use
+  ```
+  For a presenter-only demo, `oc -n minecraft port-forward svc/mc-ragnarok-waker 25565:25565` and `localhost:25565` work too.
 
 ## Tuning
 

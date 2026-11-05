@@ -54,7 +54,7 @@ curl -sk "$WAKER_URL/scaler"
 [#wake-up]
 === 2. Watch the wake-up
 
-icon:clock[] ~1-2 minutes (estimate: up to 15 s for the next poll, image start, at least 30 s to the first readiness check, up to 15 s for the waker's next probe)
+icon:clock[] ~1 minute (measured on ROSA HCP 4.22 with the images cached: up to 15 s for the next poll, 42 s from scale-up to a Ready pod including 4 s to attach the EBS volume, up to 15 s for the waker's next probe; the first pull of the server image on a node adds to it)
 
 *What:* Watch CMA activate the ScaledObject and the Deployment go from 0 to 1.
 
@@ -139,7 +139,7 @@ The structure is in front of the player. No screenshot here on purpose: it is th
 [#back-to-zero]
 === 5. Back to zero
 
-icon:clock[] ~4-5 minutes (estimate: 3 minute wake hold, then `cooldownPeriod` 60 s)
+icon:clock[] ~1 minute after the last player leaves (measured on ROSA HCP 4.22: 62 s, the waker's next probe plus `cooldownPeriod` 60 s). The 3 minute wake hold from the last server-list refresh must also have expired, so a player who leaves early waits for the rest of it.
 
 *What:* Disconnect and watch the server scale back to zero.
 

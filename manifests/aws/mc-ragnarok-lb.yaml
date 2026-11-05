@@ -1,0 +1,37 @@
+---
+# mc-ragnarok-lb.yaml
+# AWS Network Load Balancer in front of the waker, for ROSA and other
+# OpenShift clusters on AWS whose worker nodes sit in private subnets (where
+# the NodePort in ../minecraft/mc-ragnarok-np.yaml is not reachable from a
+# laptop). The AWS cloud provider creates the NLB from this Service and
+# deletes it when the Service is deleted.
+#
+# Not applied by scripts/bootstrap.sh. Restrict access to the players'
+# public addresses, then apply:
+#   export PLAYER_CIDR="$(curl -s https://checkip.amazonaws.com)/32"
+#   envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc apply -n "$NAMESPACE" -f -
+#
+# Tested on ROSA HCP 4.22: the NLB health checks do not reach the waker on
+# 25565, and the waker ignores bare TCP connects anyway, so neither keeps
+# the server awake.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-ragnarok-lb
+  labels:
+    app.kubernetes.io/part-of: mc-ragnarok
+    app.kubernetes.io/component: ingress
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  loadBalancerSourceRanges:
+    - ${PLAYER_CIDR}
+  selector:
+    app.kubernetes.io/name: mc-ragnarok-waker
+  ports:
+    - name: mc-java
+      port: 25565
+      targetPort: 25565
+      protocol: TCP

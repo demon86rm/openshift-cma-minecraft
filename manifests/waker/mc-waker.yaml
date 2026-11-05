@@ -96,7 +96,7 @@ spec:
   selector:
     app.kubernetes.io/name: mc-ragnarok-waker
   ports:
-    - { name: mc-java, port: 25565, targetPort: mc-java, protocol: TCP }
+    - { name: mc-java, port: 25565, targetPort: minecraft, protocol: TCP }
     - { name: metrics,   port: 8080,  targetPort: metrics,   protocol: TCP }
     # External player traffic uses the NodePort Service
     # (manifests/minecraft/mc-ragnarok-np.yaml). This ClusterIP exists for internal scrapers.
