@@ -133,13 +133,41 @@ oc get pod -l app.kubernetes.io/name=mc-ragnarok-waker -o wide -n "$NAMESPACE" -
 The endpoint IP is the waker pod IP, not the `mc-ragnarok` pod IP.
 ====
 
-[#rosa]
-==== On ROSA and other AWS clusters
+[#cloud-clusters]
+==== On ROSA, ARO and other cloud clusters
 
-ROSA worker nodes sit in private subnets, so the NodePort is not reachable from a laptop. Put an
-AWS Network Load Balancer in front of the waker instead, open only to the players' public
-addresses. The AWS cloud provider creates the NLB from a `Service` of `type: LoadBalancer` and
-removes it when the Service is deleted.
+On managed cloud clusters (ROSA, ARO, OpenShift Dedicated) the worker nodes usually sit in private
+subnets, so the NodePort is not reachable from a laptop. Forward the waker port to your machine
+instead: `oc port-forward` goes through the cluster API, so it works wherever `oc` works. Run this
+in a separate terminal and keep it open for the whole demo:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context {cma-context}
+----
+
+Then point the client at the local end of the tunnel:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export NODE_IP=localhost
+export NODE_PORT=25565
+echo "Minecraft server address: $NODE_IP:$NODE_PORT"
+----
+
+The traffic still goes through the waker, so the wake-up works the same way. Tested on ROSA HCP
+4.22: the tunnel survives the server scaling from 0 to 1. Nothing is exposed to the internet and
+no cloud resource is created. If the `oc` session expires the tunnel stops: run the command again.
+
+[#cloud-lb]
+===== Option: a cloud load balancer
+
+When other people must connect from their own machines, put a cloud load balancer in front of
+the waker instead, open only to their public addresses. The cloud provider creates it from a
+`Service` of `type: LoadBalancer` and removes it when the Service is deleted. The manifest asks
+AWS for a Network Load Balancer:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -149,26 +177,31 @@ envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc apply -n "$NAME
 oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -w
 ----
 
-When `EXTERNAL-IP` shows a hostname, wait for it to resolve (1-3 minutes) and use it as the
+On ARO or OpenShift Dedicated on Google Cloud, drop the AWS annotation and let the platform pick
+its default load balancer (not tested):
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | sed '/aws-load-balancer-type/d' | oc apply -n "$NAMESPACE" --context {cma-context} -f -
+----
+
+`PLAYER_CIDR` above is your own address; widen it for the people who need to connect. When
+`EXTERNAL-IP` shows an address (a hostname on AWS, an IP on Azure and Google Cloud), use it as the
 server address:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-export NODE_IP=$(oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+export NODE_IP=$(oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
 export NODE_PORT=25565
 echo "Minecraft server address: $NODE_IP:$NODE_PORT"
 ----
 
-NOTE: The NLB health checks do not wake the server: on ROSA HCP 4.22 they do not reach the waker
-on port 25565, and the waker only raises the wake signal after a real Minecraft handshake. The NLB
-is billed while it exists; delete it after the session with
-`oc delete svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context}`.
-
-TIP: For a presenter-only demo, skip the NLB: run
-`oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context {cma-context}` and
-connect the client to `localhost:25565`. The traffic still goes through the waker, so the wake-up
-works the same way.
+NOTE: Load balancer health checks do not wake the server: the waker only raises the wake signal
+after a real Minecraft handshake, so a bare TCP probe is ignored. On ROSA HCP 4.22 the NLB checks
+do not even reach port 25565. The load balancer is billed while it exists; delete it after the
+session with `oc delete svc mc-ragnarok-lb -n "$NAMESPACE" --context {cma-context}`.
 
 '''
 

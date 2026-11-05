@@ -11,6 +11,10 @@
 #   export PLAYER_CIDR="$(curl -s https://checkip.amazonaws.com)/32"
 #   envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc apply -n "$NAMESPACE" -f -
 #
+# On ARO or OpenShift Dedicated on Google Cloud, drop the aws-load-balancer-type
+# annotation (e.g. | sed '/aws-load-balancer-type/d') to get the platform's
+# default load balancer (not tested).
+#
 # Tested on ROSA HCP 4.22: the NLB health checks do not reach the waker on
 # 25565, and the waker ignores bare TCP connects anyway, so neither keeps
 # the server awake.

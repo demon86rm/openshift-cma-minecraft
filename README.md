@@ -113,13 +113,12 @@ oc -n minecraft get deploy mc-ragnarok         # READY=1/1 shortly after
 
 End-to-end:
 - **Java client** — connect to `<node-ip>:<nodePort-tcp>`. First *Refresh* shows the sleeping MOTD; refresh again ~1 min later for the live server.
-- **ROSA / AWS** — worker nodes are in private subnets, so the NodePort is unreachable from a laptop. Create an NLB restricted to your IP and connect to its hostname on 25565:
+- **ROSA / ARO / other cloud clusters** — worker nodes are usually in private subnets, so the NodePort is unreachable from a laptop. Run `oc -n minecraft port-forward svc/mc-ragnarok-waker 25565:25565` and connect to `localhost:25565` (works wherever `oc` works). If other people must connect, create a cloud load balancer restricted to their IPs and connect to its address on 25565 (on ARO / GCP drop the `aws-load-balancer-type` annotation):
   ```bash
   export PLAYER_CIDR="$(curl -s https://checkip.amazonaws.com)/32"
   envsubst '$PLAYER_CIDR' < manifests/aws/mc-ragnarok-lb.yaml | oc -n minecraft apply -f -
   oc -n minecraft get svc mc-ragnarok-lb   # EXTERNAL-IP = hostname to use
   ```
-  For a presenter-only demo, `oc -n minecraft port-forward svc/mc-ragnarok-waker 25565:25565` and `localhost:25565` work too.
 
 ## Tuning
 

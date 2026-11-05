@@ -12,7 +12,8 @@ _Click the diagram to open it full size._
 
 * The ScaledObject from xref:03-scale-to-zero.adoc[Step 3] in place and `mc-ragnarok` at `0/0`
 * `NODE_IP` and `NODE_PORT` from xref:02-waker.adoc#expose-players[Step 2]
-* Minecraft: Java Edition {mc-version} on the presenter's machine
+* Minecraft: Java Edition {mc-version} on the presenter's machine (optional: without it, follow the
+  xref:#no-client[No Minecraft client?] path)
 
 TIP: Keep two terminals visible to the audience: one running
 `oc get deploy mc-ragnarok -n "$NAMESPACE" --context {cma-context} -w`, one with the Minecraft
@@ -32,6 +33,31 @@ The server list shows the sleeping message instead of a live server.
 NOTE: The waker advertises protocol version 769 (Minecraft 1.21.4) in its sleeping status, so the
 client may flag a version mismatch next to the entry. This only affects the sleeping entry; the
 real server reports {mc-version} once it is up.
+
+[#no-client]
+.No Minecraft client?
+****
+The `mc-monitor` tool from the Minecraft server image is built into the waker. It sends the same
+Server List Ping as the client's *Refresh*, through the same waker code path, so the wake-up is
+identical:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc exec deploy/mc-ragnarok-waker -n "$NAMESPACE" --context {cma-context} -- mc-monitor status -host localhost -port 25565
+----
+
+[.console-output]
+[source,bash]
+----
+localhost:25565 : version=Ragnarok is Sleeping online=0 max=20 motd='§eServer is sleeping...
+§aJust hit Refresh to wake it up!'
+----
+
+Use the same command in place of *Refresh* in sub-step 3. Without a client you cannot join the
+server or see the finale, and no player keeps it up, so it scales back to zero once the 3 minute
+wake hold and the `cooldownPeriod` expire.
+****
 
 .Verify: the wake signal is on
 [%collapsible]
@@ -103,7 +129,10 @@ curl -sk "$WAKER_URL/status"
 The Java upstream is reported up with one player online.
 ====
 
-TIP: No Minecraft client at hand? `curl -skX POST "$WAKER_URL/wake"` raises the same wake signal.
+TIP: No Minecraft client at hand? Run the `mc-monitor` command from xref:#no-client[sub-step 1]
+again: once the server is up it reports the live server
+(`version={mc-version} online=0 max=20 motd='Welcome to the CMA Workshop!'`), proxied by the waker.
+`curl -skX POST "$WAKER_URL/wake"` also raises the wake signal, but skips the Minecraft protocol.
 
 '''
 
