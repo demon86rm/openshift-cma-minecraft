@@ -367,12 +367,40 @@ oc get pod -l app.kubernetes.io/name=mc-ragnarok-waker -o wide -n "$NAMESPACE" -
 </div>
 </details>
 <div class="sect3">
-<h4 id="rosa"><a class="anchor" href="#rosa"></a>On ROSA and other AWS clusters</h4>
+<h4 id="cloud-clusters"><a class="anchor" href="#cloud-clusters"></a>On ROSA, ARO and other cloud clusters</h4>
 <div class="paragraph">
-<p>ROSA worker nodes sit in private subnets, so the NodePort is not reachable from a laptop. Put an
-AWS Network Load Balancer in front of the waker instead, open only to the players' public
-addresses. The AWS cloud provider creates the NLB from a <code>Service</code> of <code>type: LoadBalancer</code> and
-removes it when the Service is deleted.</p>
+<p>On managed cloud clusters (ROSA, ARO, OpenShift Dedicated) the worker nodes usually sit in private
+subnets, so the NodePort is not reachable from a laptop. Forward the waker port to your machine
+instead: <code>oc port-forward</code> goes through the cluster API, so it works wherever <code>oc</code> works. Run this
+in a separate terminal and keep it open for the whole demo:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context cma</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then point the client at the local end of the tunnel:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export NODE_IP=localhost
+export NODE_PORT=25565
+echo "Minecraft server address: $NODE_IP:$NODE_PORT"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The traffic still goes through the waker, so the wake-up works the same way. Tested on ROSA HCP
+4.22: the tunnel survives the server scaling from 0 to 1. Nothing is exposed to the internet and
+no cloud resource is created. If the <code>oc</code> session expires the tunnel stops: run the command again.</p>
+</div>
+<div class="sect4">
+<h5 id="cloud-lb"><a class="anchor" href="#cloud-lb"></a>Option: a cloud load balancer</h5>
+<div class="paragraph">
+<p>When other people must connect from their own machines, put a cloud load balancer in front of
+the waker instead, open only to their public addresses. The cloud provider creates it from a
+<code>Service</code> of <code>type: LoadBalancer</code> and removes it when the Service is deleted. The manifest asks
+AWS for a Network Load Balancer:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -382,12 +410,22 @@ oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context cma -w</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>When <code>EXTERNAL-IP</code> shows a hostname, wait for it to resolve (1-3 minutes) and use it as the
+<p>On ARO or OpenShift Dedicated on Google Cloud, drop the AWS annotation and let the platform pick
+its default load balancer (not tested):</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">envsubst '$PLAYER_CIDR' &lt; manifests/aws/mc-ragnarok-lb.yaml | sed '/aws-load-balancer-type/d' | oc apply -n "$NAMESPACE" --context cma -f -</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>PLAYER_CIDR</code> above is your own address; widen it for the people who need to connect. When
+<code>EXTERNAL-IP</code> shows an address (a hostname on AWS, an IP on Azure and Google Cloud), use it as the
 server address:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export NODE_IP=$(oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context cma -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export NODE_IP=$(oc get svc mc-ragnarok-lb -n "$NAMESPACE" --context cma -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
 export NODE_PORT=25565
 echo "Minecraft server address: $NODE_IP:$NODE_PORT"</code></pre>
 </div>
@@ -399,30 +437,16 @@ echo "Minecraft server address: $NODE_IP:$NODE_PORT"</code></pre>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-The NLB health checks do not wake the server: on ROSA HCP 4.22 they do not reach the waker
-on port 25565, and the waker only raises the wake signal after a real Minecraft handshake. The NLB
-is billed while it exists; delete it after the session with
-<code>oc delete svc mc-ragnarok-lb -n "$NAMESPACE" --context cma</code>.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-For a presenter-only demo, skip the NLB: run
-<code>oc port-forward svc/mc-ragnarok-waker 25565:25565 -n "$NAMESPACE" --context cma</code> and
-connect the client to <code>localhost:25565</code>. The traffic still goes through the waker, so the wake-up
-works the same way.
+Load balancer health checks do not wake the server: the waker only raises the wake signal
+after a real Minecraft handshake, so a bare TCP probe is ignored. On ROSA HCP 4.22 the NLB checks
+do not even reach port 25565. The load balancer is billed while it exists; delete it after the
+session with <code>oc delete svc mc-ragnarok-lb -n "$NAMESPACE" --context cma</code>.
 </td>
 </tr>
 </table>
 </div>
 <hr>
+</div>
 </div>
 </div>
 <div class="sect2">

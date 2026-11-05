@@ -211,7 +211,8 @@ replica, and a short while later the player walks into the workshop world to fin
 <p><code>NODE_IP</code> and <code>NODE_PORT</code> from <a href="02-waker.html#expose-players" class="xref page">Step 2</a></p>
 </li>
 <li>
-<p>Minecraft: Java Edition 1.21.11 on the presenter&#8217;s machine</p>
+<p>Minecraft: Java Edition 1.21.11 on the presenter&#8217;s machine (optional: without it, follow the
+<a href="#no-client">No Minecraft client?</a> path)</p>
 </li>
 </ul>
 </div>
@@ -258,6 +259,32 @@ real server reports 1.21.11 once it is up.
 </td>
 </tr>
 </table>
+</div>
+<div id="no-client" class="sidebarblock">
+<div class="content">
+<div class="title">No Minecraft client?</div>
+<div class="paragraph">
+<p>The <code>mc-monitor</code> tool from the Minecraft server image is built into the waker. It sends the same
+Server List Ping as the client&#8217;s <strong>Refresh</strong>, through the same waker code path, so the wake-up is
+identical:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc exec deploy/mc-ragnarok-waker -n "$NAMESPACE" --context cma -- mc-monitor status -host localhost -port 25565</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">localhost:25565 : version=Ragnarok is Sleeping online=0 max=20 motd='§eServer is sleeping...
+§aJust hit Refresh to wake it up!'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use the same command in place of <strong>Refresh</strong> in sub-step 3. Without a client you cannot join the
+server or see the finale, and no player keeps it up, so it scales back to zero once the 3 minute
+wake hold and the <code>cooldownPeriod</code> expire.</p>
+</div>
+</div>
 </div>
 <details>
 <summary class="title">Verify: the wake signal is on</summary>
@@ -338,7 +365,10 @@ mc-ragnarok   1/1     1            1           21m</code></pre>
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-No Minecraft client at hand? <code>curl -skX POST "$WAKER_URL/wake"</code> raises the same wake signal.
+No Minecraft client at hand? Run the <code>mc-monitor</code> command from <a href="#no-client">sub-step 1</a>
+again: once the server is up it reports the live server
+(<code>version=1.21.11 online=0 max=20 motd='Welcome to the CMA Workshop!'</code>), proxied by the waker.
+<code>curl -skX POST "$WAKER_URL/wake"</code> also raises the wake signal, but skips the Minecraft protocol.
 </td>
 </tr>
 </table>

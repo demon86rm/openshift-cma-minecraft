@@ -241,11 +241,11 @@ of the repository. Everything after this page runs from the repository root.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Minecraft: Java Edition</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Version 1.21.11, with a valid account (the server runs in online mode)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Optional. Version 1.21.11, with a valid account (the server runs in online mode). Without it, Step 4 wakes the server with <code>mc-monitor</code> instead; you only miss joining the world</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Network</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The client must reach the waker: a node on the NodePort assigned in Step 2, or an AWS Network Load Balancer on ROSA</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The client must reach the waker: a node on the NodePort assigned in Step 2, or, on cloud clusters, a port-forward or a cloud load balancer</p></td>
 </tr>
 </tbody>
 </table>
@@ -257,8 +257,8 @@ of the repository. Everything after this page runs from the repository root.</p>
 </td>
 <td class="content">
 The NodePort is reachable from a laptop only if the nodes are. On many cloud and managed
-clusters (ROSA, ARO) worker nodes sit in private subnets. On ROSA, use the Network Load Balancer
-or the port-forward described in <a href="02-waker.html#rosa" class="xref page">Step 2</a> instead.
+clusters (ROSA, ARO) worker nodes sit in private subnets. There, use the port-forward (or a cloud load
+balancer) described in <a href="02-waker.html#cloud-clusters" class="xref page">Step 2</a> instead.
 </td>
 </tr>
 </table>
@@ -489,7 +489,7 @@ pod/keda-operator-...                                 1/1     Running   0       
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>PLAYER_CIDR</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>manifests/aws/mc-ragnarok-lb.yaml</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">ROSA only: public address range allowed through the Network Load Balancer (set in Step 2)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud load balancer only: public address range allowed to connect (set in Step 2)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>WAKER_URL</code></p></td>
