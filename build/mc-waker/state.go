@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-// upstreamState is a small, lockable snapshot of one upstream's health.
-// We keep one of these per protocol (Java + Bedrock) so the two protocols
-// never mask each other's state.
+// upstreamState is a small, lockable snapshot of the upstream's health.
 type upstreamState struct {
 	mu          sync.RWMutex
 	up          bool
@@ -42,8 +40,7 @@ type state struct {
 	cfg config
 	log *slog.Logger
 
-	java    upstreamState
-	bedrock upstreamState
+	java upstreamState
 
 	wakeMu    sync.Mutex
 	wakeUntil time.Time
@@ -52,20 +49,13 @@ type state struct {
 	wakeEvents  atomic.Int64
 	proxyOpens  atomic.Int64
 	proxyErrors atomic.Int64
-
-	// bedrockPings counts UDP Unconnected Pings received from clients.
-	// Useful for sanity-checking that wake traffic is reaching the waker.
-	bedrockPings           atomic.Int64
-	bedrockSessionsActive  atomic.Int64
-	bedrockForwardedUp     atomic.Int64
-	bedrockForwardedDown   atomic.Int64
 }
 
 func newState(cfg config, log *slog.Logger) *state {
 	return &state{cfg: cfg, log: log}
 }
 
-// --- Java accessors (preserved so existing call sites keep working) ---
+// --- Upstream accessors ---
 
 func (s *state) setUpstream(up bool, players int) {
 	s.java.set(up, players)
@@ -75,17 +65,7 @@ func (s *state) getUpstream() (up bool, players int, age time.Duration) {
 	return s.java.snapshot()
 }
 
-// --- Bedrock accessors ---
-
-func (s *state) setBedrockUpstream(up bool, players int) {
-	s.bedrock.set(up, players)
-}
-
-func (s *state) getBedrockUpstream() (up bool, players int, age time.Duration) {
-	return s.bedrock.snapshot()
-}
-
-// --- Wake signal (shared across protocols) ---
+// --- Wake signal ---
 
 // signalWake bumps the wake deadline forward and increments the wake counter.
 // While the deadline is in the future, minecraft_wake_signal reports 1.

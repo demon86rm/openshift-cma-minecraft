@@ -122,19 +122,3 @@ func statusHandshake() []byte {
 	_ = writePacket(&buf, pktHandshake, body)
 	return buf.Bytes()
 }
-
-func TestBedrockWakePackets(t *testing.T) {
-	ping := append([]byte{raknetIDUnconnectedPing}, make([]byte, 8)...)
-	ping = append(append(ping, raknetMagic...), make([]byte, 8)...)
-	ocr1 := append(append([]byte{raknetIDOpenConnectionReq1}, raknetMagic...), 11, 0, 0)
-	noMagic := append([]byte{raknetIDOpenConnectionReq1}, make([]byte, 20)...)
-
-	if !isUnconnectedPing(ping) || !isOpenConnectionRequest1(ocr1) {
-		t.Fatal("valid ping / OCR1 not recognised")
-	}
-	for _, p := range [][]byte{noMagic, []byte("hello"), nil} {
-		if isUnconnectedPing(p) || isOpenConnectionRequest1(p) {
-			t.Fatalf("stray packet %v treated as a wake packet", p)
-		}
-	}
-}

@@ -48,8 +48,7 @@ func runHTTP(ctx context.Context, s *state) {
 }
 
 func registerWakerMetrics(reg *prometheus.Registry, s *state) {
-	// Per-protocol player counts. Labelled by protocol so a Bedrock outage
-	// doesn't mask Java players and vice versa.
+	// Player count, labelled protocol="java" (kept for dashboard/query compatibility).
 	playersJava := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "minecraft_players_online",
 		Help: "Number of players currently online on an upstream Minecraft server (0 if upstream is down).",
@@ -97,46 +96,17 @@ func registerWakerMetrics(reg *prometheus.Registry, s *state) {
 		return float64(s.proxyOpens.Load())
 	})
 
-	bedrockPings := prometheus.NewCounterFunc(prometheus.CounterOpts{
-		Name: "minecraft_bedrock_pings_total",
-		Help: "Total number of Bedrock Unconnected Pings received from clients.",
-	}, func() float64 {
-		return float64(s.bedrockPings.Load())
-	})
-
-	bedrockSessions := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "minecraft_bedrock_sessions_active",
-		Help: "Current number of Bedrock UDP client sessions the proxy is tracking.",
-	}, func() float64 {
-		return float64(s.bedrockSessionsActive.Load())
-	})
-
-	bedrockForwardUp := prometheus.NewCounterFunc(prometheus.CounterOpts{
-		Name: "minecraft_bedrock_forwarded_packets_total",
-		Help: "Total Bedrock UDP datagrams proxied (direction=up is client→server, direction=down is server→client).",
-		ConstLabels: prometheus.Labels{"direction": "up"},
-	}, func() float64 {
-		return float64(s.bedrockForwardedUp.Load())
-	})
-	bedrockForwardDown := prometheus.NewCounterFunc(prometheus.CounterOpts{
-		Name: "minecraft_bedrock_forwarded_packets_total",
-		Help: "Total Bedrock UDP datagrams proxied (direction=up is client→server, direction=down is server→client).",
-		ConstLabels: prometheus.Labels{"direction": "down"},
-	}, func() float64 {
-		return float64(s.bedrockForwardedDown.Load())
-	})
-
 	// The convenience metric the ScaledObject uses: 1 if the server should
-	// be running (any protocol has players online OR a wake is pending),
+	// be running (players online OR a wake is pending),
 	// else 0. Built into the waker so the trigger query can stay trivial.
 	desired := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "minecraft_desired_replicas",
-		Help: "1 if any upstream should be running (players online OR wake pending), else 0.",
+		Help: "1 if the upstream should be running (players online OR wake pending), else 0.",
 	}, func() float64 {
 		return float64(desiredReplicas(s))
 	})
 
-	reg.MustRegister(wake, activeConns, wakeEvents, proxyOpens, bedrockPings, bedrockSessions, bedrockForwardUp, bedrockForwardDown, desired)
+	reg.MustRegister(wake, activeConns, wakeEvents, proxyOpens, desired)
 
 	// Re-publish gauges on every scrape by hooking a custom collector.
 	// Simpler: register a single Collect callback via a tiny lambda gauge.
@@ -149,10 +119,6 @@ func registerWakerMetrics(reg *prometheus.Registry, s *state) {
 		jUp, jPlayers, _ := s.getUpstream()
 		playersJava.WithLabelValues("java").Set(playerOrZero(jUp, jPlayers))
 		upGauge.WithLabelValues("java").Set(boolToFloat(jUp))
-
-		bUp, bPlayers, _ := s.getBedrockUpstream()
-		playersJava.WithLabelValues("bedrock").Set(playerOrZero(bUp, bPlayers))
-		upGauge.WithLabelValues("bedrock").Set(boolToFloat(bUp))
 		return 1
 	})
 	reg.MustRegister(hook)
@@ -173,12 +139,11 @@ func boolToFloat(b bool) float64 {
 }
 
 // desiredReplicas computes the same value the /scaler endpoint returns and
-// the minecraft_desired_replicas gauge exposes. Returns 1 if EITHER
-// protocol has players online OR a wake is pending.
+// the minecraft_desired_replicas gauge exposes. Returns 1 if players are
+// online OR a wake is pending.
 func desiredReplicas(s *state) int {
 	jUp, jP, _ := s.getUpstream()
-	bUp, bP, _ := s.getBedrockUpstream()
-	if (jUp && jP > 0) || (bUp && bP > 0) || s.wakeActive() {
+	if (jUp && jP > 0) || s.wakeActive() {
 		return 1
 	}
 	return 0
@@ -194,19 +159,11 @@ func textOK(msg string) http.HandlerFunc {
 func statusHandler(s *state) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		jUp, jP, jAge := s.getUpstream()
-		bUp, bP, bAge := s.getBedrockUpstream()
 		body := map[string]any{
 			"java": map[string]any{
 				"upstream_up":      jUp,
 				"players_online":   jP,
 				"last_probe_age_s": jAge.Seconds(),
-			},
-			"bedrock": map[string]any{
-				"enabled":          s.cfg.bedrockEnabled(),
-				"upstream_up":      bUp,
-				"players_online":   bP,
-				"last_probe_age_s": bAge.Seconds(),
-				"pings_received":   s.bedrockPings.Load(),
 			},
 			"wake_active":      s.wakeActive(),
 			"active_conns":     s.activeConns.Load(),
