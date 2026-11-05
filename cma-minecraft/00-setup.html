@@ -221,7 +221,7 @@ of the repository. Everything after this page runs from the repository root.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift cluster</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">4.21+, with a default StorageClass (two 1Gi <code>ReadWriteOnce</code> PVCs)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.21+, with a default StorageClass (one 1Gi <code>ReadWriteOnce</code> PVC)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Permissions</p></td>
@@ -245,7 +245,7 @@ of the repository. Everything after this page runs from the repository root.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Network</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The client must reach a cluster node on the NodePort assigned in Step 2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The client must reach the waker: a node on the NodePort assigned in Step 2, or an AWS Network Load Balancer on ROSA</p></td>
 </tr>
 </tbody>
 </table>
@@ -257,8 +257,8 @@ of the repository. Everything after this page runs from the repository root.</p>
 </td>
 <td class="content">
 The NodePort is reachable from a laptop only if the nodes are. On many cloud and managed
-clusters (ROSA, ARO) worker nodes sit in private subnets: check this before the session, or plan
-a jump host or a load balancer in front of the NodePort.
+clusters (ROSA, ARO) worker nodes sit in private subnets. On ROSA, use the Network Load Balancer
+or the port-forward described in <a href="02-waker.html#rosa" class="xref page">Step 2</a> instead.
 </td>
 </tr>
 </table>
@@ -485,6 +485,11 @@ pod/keda-operator-...                                 1/1     Running   0       
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>NODE_PORT</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Port of the <code>mc-ragnarok-nodeport</code> Service (set in Step 2)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>PLAYER_CIDR</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>manifests/aws/mc-ragnarok-lb.yaml</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ROSA only: public address range allowed through the Network Load Balancer (set in Step 2)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>WAKER_URL</code></p></td>

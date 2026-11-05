@@ -279,7 +279,7 @@ real server reports 1.21.11 once it is up.
 <div class="sect2">
 <h3 id="wake-up"><a class="anchor" href="#wake-up"></a>2. Watch the wake-up</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~1-2 minutes (estimate: up to 15 s for the next poll, image start, at least 30 s to the first readiness check, up to 15 s for the waker&#8217;s next probe)</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (measured on ROSA HCP 4.22 with the images cached: up to 15 s for the next poll, 42 s from scale-up to a Ready pod including 4 s to attach the EBS volume, up to 15 s for the waker&#8217;s next probe; the first pull of the server image on a node adds to it)</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Watch CMA activate the ScaledObject and the Deployment go from 0 to 1.</p>
@@ -410,7 +410,7 @@ Walk the route once while rehearsing, so you know how long it takes on stage.
 <div class="sect2">
 <h3 id="back-to-zero"><a class="anchor" href="#back-to-zero"></a>5. Back to zero</h3>
 <div class="paragraph">
-<p><span class="icon"><i class="fa fa-clock"></i></span> ~4-5 minutes (estimate: 3 minute wake hold, then <code>cooldownPeriod</code> 60 s)</p>
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute after the last player leaves (measured on ROSA HCP 4.22: 62 s, the waker&#8217;s next probe plus <code>cooldownPeriod</code> 60 s). The 3 minute wake hold from the last server-list refresh must also have expired, so a player who leaves early waits for the rest of it.</p>
 </div>
 <div class="paragraph">
 <p><strong>What:</strong> Disconnect and watch the server scale back to zero.</p>
