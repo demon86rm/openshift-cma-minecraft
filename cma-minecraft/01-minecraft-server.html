@@ -215,9 +215,9 @@ itself.</p>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-The server images (<code>docker.io/itzg/minecraft-server</code> and <code>docker.io/itzg/minecraft-bedrock-server</code>)
-come from Docker Hub: there is no Red Hat build of a Minecraft server. The pod also runs a Bedrock
-container on UDP 19132; this workshop focuses on the Java path, Bedrock follows the same pattern.
+The server image (<code>docker.io/itzg/minecraft-server</code>) comes from Docker Hub: there is no Red
+Hat build of a Minecraft server. Bedrock Edition is not covered: since 1.26 its clients connect only
+over NetherNet (WebRTC with Microsoft signaling), which the waker can neither detect nor proxy.
 </td>
 </tr>
 </table>
@@ -315,7 +315,6 @@ CurseForge key is not used; RCON is disabled.
 <div class="listingblock console-output">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                          STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-mc-ragnarok-bedrock-datadir   Pending                                      gp3-csi        10s
 mc-ragnarok-datadir           Pending                                      gp3-csi        10s</code></pre>
 </div>
 </div>
