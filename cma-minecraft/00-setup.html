@@ -245,24 +245,10 @@ of the repository. Everything after this page runs from the repository root.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Network</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The client must reach the waker: a node on the NodePort assigned in Step 2, or, on cloud clusters, a port-forward or a cloud load balancer</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only the cluster API: the client connects through <code>oc port-forward</code> (Step 2)</p></td>
 </tr>
 </tbody>
 </table>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-The NodePort is reachable from a laptop only if the nodes are. On many cloud and managed
-clusters (ROSA, ARO) worker nodes sit in private subnets. There, use the port-forward (or a cloud load
-balancer) described in <a href="02-waker.html#cloud-clusters" class="xref page">Step 2</a> instead.
-</td>
-</tr>
-</table>
-</div>
 <hr>
 </div>
 </div>
@@ -477,19 +463,9 @@ pod/keda-operator-...                                 1/1     Running   0       
 <td class="tableblock halign-left valign-top"><p class="tableblock">API endpoint used by <code>oc login</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NODE_IP</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Address of a node the Minecraft client can reach (set in Step 2)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NODE_PORT</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Step 4</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Port of the <code>mc-ragnarok-nodeport</code> Service (set in Step 2)</p></td>
-</tr>
-<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>PLAYER_CIDR</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>manifests/aws/mc-ragnarok-lb.yaml</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud load balancer only: public address range allowed to connect (set in Step 2)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Optional cloud load balancer only: public address range allowed to connect (Step 2)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>WAKER_URL</code></p></td>

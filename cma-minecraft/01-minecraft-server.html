@@ -415,19 +415,6 @@ done
 oc rollout status deploy/mc-ragnarok -n "$NAMESPACE" --context cma --timeout=300s</code></pre>
 </div>
 </div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-Do not apply <code>manifests/minecraft/mc-ragnarok-np.yaml</code> yet. That NodePort Service
-selects the <strong>waker</strong> pod, which does not exist until Step 2.
-</td>
-</tr>
-</table>
-</div>
 <div class="admonitionblock note">
 <table>
 <tr>
